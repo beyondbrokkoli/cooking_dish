@@ -1172,7 +1172,23 @@ void vkCmdEndRendering(VkCommandBuffer commandBuffer);
 -- START OF vulkan_core.lua
 -- =========================================================
 
-local vk = ffi.load("vulkan")
+local vk
+-- 1. Try Windows/Wine standard (vulkan-1.dll)
+local success, lib = pcall(ffi.load, "vulkan-1")
+
+-- 2. Try Linux standard (libvulkan.so)
+if not success then
+    success, lib = pcall(ffi.load, "vulkan")
+end
+
+-- 3. Try Linux strict versioning (libvulkan.so.1)
+if not success then
+    success, lib = pcall(ffi.load, "libvulkan.so.1")
+end
+
+assert(success, "FATAL: Could not load the Vulkan dynamic library! Is the Vulkan runtime installed?\nError: " .. tostring(lib))
+vk = lib
+
 local core = {}
 
 function core.init()
