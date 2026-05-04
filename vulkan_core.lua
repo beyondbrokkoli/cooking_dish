@@ -1411,7 +1411,7 @@ function core.init()
     return {
         instance = instance,
         physicalDevice = physicalDevice,
-        surface = surface
+        surface = surface,
         device = device,         -- ADD THIS! (The Logical Device)
         queue = queue,           -- ADD THIS! (The Command Queue)
         qIndex = qIndex          -- ADD THIS! (The Queue Family Index)
