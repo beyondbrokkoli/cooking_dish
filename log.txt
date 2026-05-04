@@ -1,45 +1,10 @@
-$ git pull
-remote: Enumerating objects: 13, done.
-remote: Counting objects: 100% (13/13), done.
-remote: Compressing objects: 100% (5/5), done.
-remote: Total 9 (delta 6), reused 7 (delta 4), pack-reused 0 (from 0)
-Unpacking objects: 100% (9/9), 7.45 KiB | 19.00 KiB/s, done.
-From https://github.com/beyondbrokkoli/cooking_dish
-   0dd99b3..e5598c9  main       -> origin/main
-Updating 0dd99b3..e5598c9
-Fast-forward
- memory.lua      | 209 +++++++++++++++++++++++++
- parse.py        |  50 +++++-
- test.lua        | 637 +++++++++++++++++++++++++++++++++++++++++++++++----------------------------
- vulkan_core.lua | 641 ++++++++++++++++++++++++++++++++++++++++++++++++----------------------------
- 4 files changed, 1062 insertions(+), 475 deletions(-)
- create mode 100644 memory.lua
-
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$ lua build_orchestrator.lua win
-========================================
-   VIBE ENGINE BUILD ORCHESTRATOR
-   Target Platform: WIN
-========================================
-
-[1/3] Compiling SPIR-V Shaders...
-
-[2/3] Compiling AVX2 Physics Backend (.dll) ...
-
-[3/3] Compiling Vulkan Host (.exe) ...
-
-[4/4] Packing Windows Dependencies (DLLs)...
-  |- DLLs copied successfully.
-
-[SUCCESS] Engine build complete!
-
-
---- AI SNAPSHOT ---
-
 AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
 $ ./swarm_gpu.exe
 [BOOT] Starting Naked Bootloader...
 [LUA] love_load executing...
 [LUA] Initializing Vulkan Core...
 [LUA] Vulkan Instance Created!
-FATAL: GLFW Failed to create Vulkan Surface!
+[LUA] Window Surface Linked!
+[LUA] Hardware GPU Selected!
+[LUA] Engine Boot Sequence Complete.
+[BOOT] Entering Main Loop...
