@@ -58,7 +58,7 @@ local function compile_engine(platform)
 
         print("\n[2/3] Compiling AVX2 Physics Backend (.dll) ...")
         local win_backend = "gcc -O3 -mavx -mavx2 -mfma -shared vibemath.c -o vibemath.dll"
-        os.execute(win_backend)
+        -- os.execute(win_backend)
 
         print("\n[3/3] Compiling Vulkan Host (.exe) ...")
         local win_frontend = string.format(
