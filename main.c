@@ -37,7 +37,36 @@ static int l_create_surface(lua_State* L) {
     lua_pushnumber(L, (lua_Number)(uintptr_t)surface);
     return 1;
 }
+// 3. Get Window Size (Crucial for Swapchain setup later)
+static int l_get_window_size(lua_State* L) {
+    int width, height;
+    glfwGetFramebufferSize(g_window, &width, &height);
+    lua_pushinteger(L, width);
+    lua_pushinteger(L, height);
+    return 2; // Returns both width and height to Lua
+}
 
+// 4. Toggle Fullscreen
+static int l_set_fullscreen(lua_State* L) {
+    int enable = lua_toboolean(L, 1);
+    
+    // Grab the primary monitor and its current video mode
+    GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+    const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+    if (enable) {
+        // Switch to Exclusive Fullscreen using the monitor's native resolution
+        glfwSetWindowMonitor(g_window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+    } else {
+        // Switch back to Windowed mode (e.g., 1280x720 centered)
+        int win_w = 1280;
+        int win_h = 720;
+        int pos_x = (mode->width - win_w) / 2;
+        int pos_y = (mode->height - win_h) / 2;
+        glfwSetWindowMonitor(g_window, NULL, pos_x, pos_y, win_w, win_h, GLFW_DONT_CARE);
+    }
+    return 0;
+}
 int main() {
     printf("[BOOT] Starting Naked Bootloader...\n");
 
@@ -53,6 +82,9 @@ int main() {
     lua_newtable(L);
     lua_pushcfunction(L, l_get_glfw_extensions); lua_setfield(L, -2, "get_glfw_extensions");
     lua_pushcfunction(L, l_create_surface);      lua_setfield(L, -2, "create_surface");
+    lua_pushcfunction(L, l_get_window_size); lua_setfield(L, -2, "getWindowSize");
+    lua_pushcfunction(L, l_set_fullscreen); lua_setfield(L, -2, "setFullscreen");
+
     lua_setglobal(L, "C_Bridge");
 
     // Boot the Lua Brain
