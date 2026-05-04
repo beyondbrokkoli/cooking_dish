@@ -31,27 +31,76 @@ def generate_lua_ffi_cdef(xml_path):
         if name_elem is not None:
             handle_name = name_elem.text
             ffi_declarations.append(f"typedef struct {handle_name}_T* {handle_name};")
+# ... (Keep the TARGET_FUNCTIONS and handle grabbing code) ...
 
-    # 2. Grab Structs
-    ffi_declarations.append("\n// --- Structs ---")
-    for struct in root.findall('.//types/type[@category="struct"]'):
-        struct_name = struct.get('name')
-        if struct_name not in TARGET_STRUCTS:
-            continue
+    # Dictionary to map struct names to their XML element
+    all_structs_xml = {s.get('name'): s for s in root.findall('.//types/type[@category="struct"]')}
+    
+    # 1. Figure out which structs our TARGET_FUNCTIONS need directly
+    required_types = set()
+    for command in root.findall('.//commands/command'):
+        if command.find('name') is not None and command.find('name').text in TARGET_FUNCTIONS:
+            for param in command.findall('param'):
+                type_elem = param.find('type')
+                if type_elem is not None:
+                    required_types.add(type_elem.text)
+
+    # 2. Recursively find nested structs (Dependencies)
+    resolved_structs = set()
+    struct_dependencies = {} # Maps struct -> set of structs it depends on
+    
+    def resolve_dependencies(type_name):
+        if type_name in resolved_structs or type_name not in all_structs_xml:
+            return
             
+        struct_xml = all_structs_xml[type_name]
+        resolved_structs.add(type_name)
+        struct_dependencies[type_name] = set()
+
+        for member in struct_xml.findall('member'):
+            member_type = member.find('type')
+            if member_type is not None and member_type.text in all_structs_xml:
+                struct_dependencies[type_name].add(member_type.text)
+                resolve_dependencies(member_type.text) # Recurse!
+
+    for t in list(required_types):
+        resolve_dependencies(t)
+
+    # 3. Topological Sort (Print base structs before complex structs)
+    ffi_declarations.append("\n// --- Structs (Auto-Sorted) ---")
+    emitted = set()
+
+    def emit_struct(struct_name):
+        if struct_name in emitted:
+            return
+        
+        # Make sure all dependencies are printed first
+        for dep in struct_dependencies.get(struct_name, []):
+            emit_struct(dep)
+
+        struct_xml = all_structs_xml[struct_name]
         members = []
-        for member in struct.findall('member'):
-            # FIX: Destroy <comment> tags so they don't bleed into the C syntax
+        seen_members = set() # Squash duplicate XML artifacts
+        
+        for member in struct_xml.findall('member'):
             for comment in member.findall('comment'):
                 member.remove(comment)
-                
-            member_text = "".join(member.itertext()).strip()
-            member_text = " ".join(member_text.split())
-            members.append(f"    {member_text};")
-        
-        struct_def = f"typedef struct {struct_name} {{\n" + "\n".join(members) + f"\n}} {struct_name};"
-        ffi_declarations.append(struct_def)
+            
+            member_name = member.find('name').text if member.find('name') is not None else ""
+            if member_name in seen_members:
+                continue
+            seen_members.add(member_name)
 
+            member_text = "".join(member.itertext()).strip()
+            members.append(f"    {' '.join(member_text.split())};")
+            
+        ffi_declarations.append(f"typedef struct {struct_name} {{\n" + "\n".join(members) + f"\n}} {struct_name};")
+        emitted.add(struct_name)
+
+    for s in resolved_structs:
+        emit_struct(s)
+        
+    # ... (Keep the function grabbing code) ...
     # 3. Grab Functions
     ffi_declarations.append("\n// --- Functions ---")
     for command in root.findall('.//commands/command'):
