@@ -1,3 +1,4 @@
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
 $ ./swarm_gpu.exe
 [BOOT] Starting Naked Bootloader...
 [LUA] love_load executing...
@@ -6,17 +7,19 @@ $ ./swarm_gpu.exe
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
 [LUA] Logical Device Created!
-[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02484bee3c28
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x025cf9075a78
 [MEMORY] Initializing GPU Buffer Manager...
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x025cf9075a78
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x025cf9075a78
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x025cf9075a78
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
+[DESCRIPTORS] Ping-Pong Sets successfully wired!
 [C BRIDGE] GPU Buffers locked and loaded in C backend.
 [LUA] Engine Boot Sequence Complete.
 [BOOT] Entering Main Loop...
