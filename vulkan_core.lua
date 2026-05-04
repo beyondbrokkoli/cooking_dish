@@ -1375,6 +1375,8 @@ function core.init()
         pApplicationName = "VibeEngine Cooking Dish",
         apiVersion = 4194304 -- VK_API_VERSION_1_0
     })
+    -- 2.5 Define the Validation Layers (Just like your old main.c!)
+    local validationLayers = ffi.new("const char*[1]", {"VK_LAYER_KHRONOS_validation"})
 
     -- 3. Build the Instance Info
     local createInfo = ffi.new("VkInstanceCreateInfo", {
@@ -1382,9 +1384,9 @@ function core.init()
         pApplicationInfo = appInfo,
         enabledExtensionCount = exts_count,
         ppEnabledExtensionNames = glfwExtensions,
-        enabledLayerCount = 1 -- We will add validation layers back later
+        enabledLayerCount = 1,
+        ppEnabledLayerNames = validationLayers -- <--- NO MORE NULL POINTER!
     })
-
     -- 4. Create the Instance
     local pInstance = ffi.new("VkInstance[1]")
     local res = vk.vkCreateInstance(createInfo, nil, pInstance)
