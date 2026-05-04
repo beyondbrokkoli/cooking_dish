@@ -118,9 +118,16 @@ int main() {
         return -1;
     }
 
-    // Call love.load
+    // Call love_load
     lua_getglobal(L, "love_load");
-    if (lua_isfunction(L, -1)) { lua_pcall(L, 0, 0, 0); } else { lua_pop(L, 1); }
+    if (lua_isfunction(L, -1)) {
+        if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+            printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1));
+            exit(-1);
+        }
+    } else {
+        lua_pop(L, 1);
+    }
 
     printf("[BOOT] Entering Main Loop...\n");
     while (!glfwWindowShouldClose(g_window)) {
