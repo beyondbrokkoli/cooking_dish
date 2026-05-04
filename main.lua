@@ -1,7 +1,8 @@
 local ffi = require("ffi")
 local vk_core = require("vulkan_core")
 local memory = require("memory")
-local descriptors = require("descriptors") -- ADD THIS
+local descriptors = require("descriptors")
+local swapchain = require("swapchain") -- ADD THIS
 
 -- Universal Vulkan Loader
 local success, vk = pcall(ffi.load, "vulkan-1")
@@ -18,7 +19,7 @@ function love_load()
     -- 2. Boot GPU Memory Manager
     memory.Init(vk, Engine.vk_context)
 
-    -- 3. Wire up the Compute Descriptors (NEW!)
+    -- 3. Wire up the Compute Descriptors
     Engine.vk_descriptors = descriptors.Init(
         vk, 
         Engine.vk_context.device, 
@@ -26,7 +27,11 @@ function love_load()
         memory.Buffers["SwarmB"]
     )
 
-    -- 4. Extract the handles and cast them to raw numbers
+    -- 4. Create the Swapchain (NEW!)
+    local win_width, win_height = C_Bridge.getWindowSize()
+    Engine.vk_swapchain = swapchain.Init(vk, Engine.vk_context, win_width, win_height)
+
+    -- 5. Extract the handles and cast them to raw numbers
     local bufA    = tonumber(ffi.cast("uintptr_t", memory.Buffers["SwarmA"]))
     local bufB    = tonumber(ffi.cast("uintptr_t", memory.Buffers["SwarmB"]))
     local bufCage = tonumber(ffi.cast("uintptr_t", memory.Buffers["Cage"]))
@@ -35,7 +40,7 @@ function love_load()
     local ptrB    = tonumber(ffi.cast("uintptr_t", memory.Mapped["SwarmB"]))
     local ptrCage = tonumber(ffi.cast("uintptr_t", memory.Mapped["Cage"]))
 
-    -- 5. Hand off to C!
+    -- 6. Hand off to C!
     C_Bridge.submit_buffers(bufA, bufB, bufCage, ptrA, ptrB, ptrCage)
 
     print("[LUA] Engine Boot Sequence Complete.")

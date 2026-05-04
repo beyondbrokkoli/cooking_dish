@@ -35,7 +35,9 @@ TARGET_FUNCTIONS = {
 
     # Swapchain & Sync
     "vkCreateSemaphore", "vkDestroySemaphore",
-    "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkDestroySwapchainKHR", "vkQueuePresentKHR"
+    "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkDestroySwapchainKHR", "vkQueuePresentKHR",
+    "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", "vkGetSwapchainImagesKHR", "vkCreateImageView",
+    "vkDestroyImageView",
 }
 def generate_lua_ffi_cdef(xml_path):
     tree = ET.parse(xml_path)
