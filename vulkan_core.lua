@@ -1201,14 +1201,14 @@ function core.init()
 
     -- 2. Build the Application Info
     local appInfo = ffi.new("VkApplicationInfo", {
-        sType = vk.VK_STRUCTURE_TYPE_APPLICATION_INFO,
+        sType = 0, -- VK_STRUCTURE_TYPE_APPLICATION_INFO
         pApplicationName = "VibeEngine Cooking Dish",
         apiVersion = 4194304 -- VK_API_VERSION_1_0
     })
 
     -- 3. Build the Instance Info
     local createInfo = ffi.new("VkInstanceCreateInfo", {
-        sType = vk.VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
+        sType = 1, -- VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
         pApplicationInfo = appInfo,
         enabledExtensionCount = exts_count,
         ppEnabledExtensionNames = glfwExtensions,

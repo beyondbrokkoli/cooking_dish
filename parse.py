@@ -1,19 +1,53 @@
 import xml.etree.ElementTree as ET
 
 TARGET_FUNCTIONS = {
+    # Instance/Device/Queues
     "vkCreateInstance", "vkEnumeratePhysicalDevices", "vkCreateDevice", "vkDestroyInstance", "vkDestroyDevice",
-    "vkCreateBuffer", "vkGetBufferMemoryRequirements", "vkAllocateMemory", "vkBindBufferMemory", "vkMapMemory", "vkUnmapMemory", "vkFreeMemory",
-    "vkCreateGraphicsPipelines", "vkCreatePipelineLayout", "vkCmdBindPipeline", "vkCmdBeginRendering", "vkCmdDraw", "vkCmdEndRendering",
-    "vkCreateSemaphore", "vkBeginCommandBuffer", "vkEndCommandBuffer", "vkQueueSubmit", "vkResetCommandBuffer",
-    "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkQueuePresentKHR"
-}
+    "vkQueueSubmit", "vkQueueWaitIdle", "vkDeviceWaitIdle",
+    
+    # Memory/Buffers (The ReBAR Allocator)
+    "vkGetPhysicalDeviceMemoryProperties", "vkCreateBuffer", "vkDestroyBuffer", 
+    "vkGetBufferMemoryRequirements", "vkAllocateMemory", "vkBindBufferMemory", 
+    "vkMapMemory", "vkUnmapMemory", "vkFreeMemory",
 
+    # Descriptors (The Wiring)
+    "vkCreateDescriptorSetLayout", "vkCreateDescriptorPool", "vkAllocateDescriptorSets", 
+    "vkUpdateDescriptorSets", "vkDestroyDescriptorPool", "vkDestroyDescriptorSetLayout",
+
+    # Pipelines & Shaders
+    "vkCreateShaderModule", "vkDestroyShaderModule",
+    "vkCreateGraphicsPipelines", "vkCreateComputePipelines", 
+    "vkCreatePipelineLayout", "vkDestroyPipeline", "vkDestroyPipelineLayout",
+
+    # Command Buffers
+    "vkCreateCommandPool", "vkDestroyCommandPool", "vkAllocateCommandBuffers",
+    "vkBeginCommandBuffer", "vkEndCommandBuffer", "vkResetCommandBuffer", 
+    "vkCmdBindPipeline", "vkCmdBindDescriptorSets", "vkCmdPushConstants", 
+    "vkCmdDispatch", "vkCmdPipelineBarrier",
+
+    # Graphics/Rendering specific
+    "vkCmdBeginRendering", "vkCmdDraw", "vkCmdEndRendering",
+    
+    # Swapchain & Sync
+    "vkCreateSemaphore", "vkDestroySemaphore",
+    "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkDestroySwapchainKHR", "vkQueuePresentKHR"
+}
 def generate_lua_ffi_cdef(xml_path):
     tree = ET.parse(xml_path)
     root = tree.getroot()
 
     ffi_declarations = []
     seen_funcs = set()
+
+    # 0. Grab API Constants (C Macros like VK_MAX_MEMORY_TYPES)
+    api_constants = {}
+    for enums_node in root.findall('.//enums[@name="API Constants"]'):
+        for enum_tag in enums_node.findall('enum'):
+            name = enum_tag.get('name')
+            value = enum_tag.get('value')
+            if name and value:
+                # Strip out C-specific suffixes like 'U' or 'ULL' (e.g. 32U -> 32)
+                api_constants[name] = value.replace('U', '').replace('L', '')
 
     # 1. Grab Handles
     ffi_declarations.append("// --- Handles ---")
@@ -114,6 +148,12 @@ def generate_lua_ffi_cdef(xml_path):
             seen_members.add(member_name)
 
             member_text = "".join(member.itertext()).strip()
+
+            # SURGICAL PATCH: Swap out C macros for their raw integer values
+            for macro_name, macro_value in api_constants.items():
+                if macro_name in member_text:
+                    member_text = member_text.replace(macro_name, macro_value)
+
             members.append(f"    {' '.join(member_text.split())};")
 
         # Check if this is a struct or a union to emit the correct C syntax
