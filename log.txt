@@ -1,0 +1,3 @@
+[BOOT] Starting Naked Bootloader...
+[LUA FATAL]: .\vulkan_core.lua:1175: cannot load module 'vulkan': Das angegebene Modul wurde nicht gefunden.
+
