@@ -8,6 +8,7 @@ TARGET_FUNCTIONS = {
     "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkQueuePresentKHR"
 }
 
+# The specific structs needed by the functions above
 TARGET_STRUCTS = {
     "VkInstanceCreateInfo", "VkAllocationCallbacks", "VkApplicationInfo",
     "VkDeviceCreateInfo", "VkDeviceQueueCreateInfo", "VkSubmitInfo",
@@ -24,12 +25,13 @@ def generate_lua_ffi_cdef(xml_path):
     ffi_declarations = []
     seen_funcs = set()
 
-    # 1. Grab Handles 
+    # 1. Grab Handles (Opaque pointers for LuaJIT like VkInstance, VkDevice)
     ffi_declarations.append("// --- Handles ---")
     for handle in root.findall('.//types/type[@category="handle"]'):
         name_elem = handle.find('name')
         if name_elem is not None:
             handle_name = name_elem.text
+            # Define as opaque pointers so LuaJIT is happy
             ffi_declarations.append(f"typedef struct {handle_name}_T* {handle_name};")
 
     # 2. Grab Structs
@@ -41,14 +43,12 @@ def generate_lua_ffi_cdef(xml_path):
             
         members = []
         for member in struct.findall('member'):
-            # FIX: Destroy <comment> tags so they don't bleed into the C syntax
-            for comment in member.findall('comment'):
-                member.remove(comment)
-                
+            # Grab text, strip it, and remove weird internal XML spacing
             member_text = "".join(member.itertext()).strip()
             member_text = " ".join(member_text.split())
             members.append(f"    {member_text};")
         
+        # Format struct definition
         struct_def = f"typedef struct {struct_name} {{\n" + "\n".join(members) + f"\n}} {struct_name};"
         ffi_declarations.append(struct_def)
 
@@ -66,6 +66,7 @@ def generate_lua_ffi_cdef(xml_path):
         if name_elem is None or name_elem.text not in TARGET_FUNCTIONS:
             continue
             
+        # Prevent duplicates
         if name_elem.text in seen_funcs:
             continue
         seen_funcs.add(name_elem.text)
@@ -73,10 +74,6 @@ def generate_lua_ffi_cdef(xml_path):
         signature = "".join(proto.itertext()).strip()
         params = []
         for param in command.findall('param'):
-            # FIX: Destroy <comment> tags here too, just in case
-            for comment in param.findall('comment'):
-                param.remove(comment)
-                
             param_text = "".join(param.itertext()).strip()
             param_text = " ".join(param_text.split())
             params.append(param_text)
@@ -89,6 +86,7 @@ def generate_lua_ffi_cdef(xml_path):
 if __name__ == "__main__":
     print("ffi.cdef[[")
     
+    # You may need to manually define some base types/enums if LuaJIT complains
     print("// --- Base Types ---")
     print("typedef uint32_t VkFlags;")
     print("typedef uint64_t VkDeviceSize;")
