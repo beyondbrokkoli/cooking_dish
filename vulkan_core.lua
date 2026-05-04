@@ -1,4 +1,5 @@
 local ffi = require("ffi")
+local bit = require("bit")
 
 ffi.cdef[[
 // --- Base Types ---
@@ -1407,6 +1408,66 @@ function core.init()
 
     local physicalDevice = pDevices[0] -- Just grab the first GPU for now
     print("[LUA] Hardware GPU Selected!")
+    -- =========================================================
+    -- 7. Find the Graphics/Compute Queue Family
+    -- =========================================================
+    local pQueueFamilyCount = ffi.new("uint32_t[1]")
+    vk.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyCount, nil)
+    local queueFamilies = ffi.new("VkQueueFamilyProperties[?]", pQueueFamilyCount[0])
+    vk.vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, pQueueFamilyCount, queueFamilies)
+
+    local qIndex = -1
+    for i = 0, pQueueFamilyCount[0] - 1 do
+        -- VK_QUEUE_GRAPHICS_BIT is 1. (It guarantees Compute support too!)
+        if bit.band(queueFamilies[i].queueFlags, 1) ~= 0 then
+            qIndex = i
+            break
+        end
+    end
+    assert(qIndex ~= -1, "FATAL: Could not find a Graphics/Compute queue!")
+
+    -- =========================================================
+    -- 8. Create the Logical Device
+    -- =========================================================
+    local queuePriority = ffi.new("float[1]", 1.0)
+    local queueCreateInfo = ffi.new("VkDeviceQueueCreateInfo", {
+        sType = 2, -- VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO
+        queueFamilyIndex = qIndex,
+        queueCount = 1,
+        pQueuePriorities = queuePriority
+    })
+
+    -- Enable Swapchain (Windowing) Extension
+    local deviceExtensions = ffi.new("const char*[1]", {"VK_KHR_swapchain"})
+
+    -- Enable Dynamic Rendering (Crucial for VibeEngine!)
+    local dynamicRendering = ffi.new("VkPhysicalDeviceDynamicRenderingFeatures", {
+        sType = 1000044003, -- VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES
+        dynamicRendering = 1 -- VK_TRUE
+    })
+
+    local deviceCreateInfo = ffi.new("VkDeviceCreateInfo", {
+        sType = 3, -- VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO
+        pNext = dynamicRendering,
+        queueCreateInfoCount = 1,
+        pQueueCreateInfos = queueCreateInfo,
+        enabledExtensionCount = 1,
+        ppEnabledExtensionNames = deviceExtensions
+    })
+
+    local pDevice = ffi.new("VkDevice[1]")
+    local res = vk.vkCreateDevice(physicalDevice, deviceCreateInfo, nil, pDevice)
+    assert(res == 0, "FATAL: Failed to create Logical Device! Error: " .. tonumber(res))
+    local device = pDevice[0]
+    print("[LUA] Logical Device Created!")
+
+    -- =========================================================
+    -- 9. Grab the Command Queue
+    -- =========================================================
+    local pQueue = ffi.new("VkQueue[1]")
+    vk.vkGetDeviceQueue(device, qIndex, 0, pQueue)
+    local queue = pQueue[0]
+
     print("[DEBUG] Device Pointer in core: ", device)
     return {
         instance = instance,
