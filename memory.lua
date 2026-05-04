@@ -62,6 +62,7 @@ function Memory.CreateHostVisibleBuffer(name, cdef_type, element_count, usage_fl
     bufInfo.sharingMode = 0 -- VK_SHARING_MODE_EXCLUSIVE
 
     local pBuffer = ffi.new("VkBuffer[1]")
+    print("[DEBUG] Device Pointer in memory module: ", core_state.device)
     local res = vk.vkCreateBuffer(core_state.device, bufInfo, nil, pBuffer)
     assert(res == 0, "FATAL: vkCreateBuffer failed with error code: " .. tonumber(res))
     Memory.Buffers[name] = pBuffer[0]

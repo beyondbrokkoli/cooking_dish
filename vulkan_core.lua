@@ -1407,7 +1407,7 @@ function core.init()
 
     local physicalDevice = pDevices[0] -- Just grab the first GPU for now
     print("[LUA] Hardware GPU Selected!")
-
+    print("[DEBUG] Device Pointer in core: ", device)
     return {
         instance = instance,
         physicalDevice = physicalDevice,
