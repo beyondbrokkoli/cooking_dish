@@ -54,15 +54,16 @@ function Memory.CreateHostVisibleBuffer(name, cdef_type, element_count, usage_fl
     local byte_size = ffi.sizeof(cdef_type) * element_count
 
     -- 1. Create the Buffer
-    local bufInfo = ffi.new("VkBufferCreateInfo", {
-        sType = 12, -- VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
-        size = byte_size,
-        usage = usage_flags,
-        sharingMode = 0 -- VK_SHARING_MODE_EXCLUSIVE
-    })
+    local bufInfo = ffi.new("VkBufferCreateInfo")
+    ffi.fill(bufInfo, ffi.sizeof(bufInfo)) -- FORCE zero-initialization!
+    bufInfo.sType = 12 -- VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
+    bufInfo.size = byte_size
+    bufInfo.usage = usage_flags
+    bufInfo.sharingMode = 0 -- VK_SHARING_MODE_EXCLUSIVE
 
     local pBuffer = ffi.new("VkBuffer[1]")
-    assert(vk.vkCreateBuffer(core_state.device, bufInfo, nil, pBuffer) == 0)
+    local res = vk.vkCreateBuffer(core_state.device, bufInfo, nil, pBuffer)
+    assert(res == 0, "FATAL: vkCreateBuffer failed with error code: " .. tonumber(res))
     Memory.Buffers[name] = pBuffer[0]
 
     -- 2. Get Memory Requirements
