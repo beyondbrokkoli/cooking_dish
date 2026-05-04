@@ -1,5 +1,9 @@
 import xml.etree.ElementTree as ET
 
+TARGET_STRUCTS = {
+    "VkPhysicalDeviceDynamicRenderingFeatures"
+}
+
 TARGET_FUNCTIONS = {
     # Instance/Device/Queues
     "vkCreateInstance", "vkEnumeratePhysicalDevices", "vkCreateDevice", "vkDestroyInstance", "vkDestroyDevice",
@@ -101,6 +105,10 @@ def generate_lua_ffi_cdef(xml_path):
                     type_elem = param.find('type')
                     if type_elem is not None:
                         required_types.add(type_elem.text)
+
+    # --- SURGICAL PATCH: FORCE-FEED EXPLICIT STRUCTS ---
+    for explicit_struct in TARGET_STRUCTS:
+        required_types.add(explicit_struct)
 
     # 3. Recursively find nested structs (Dependencies)
     resolved_structs = set()
