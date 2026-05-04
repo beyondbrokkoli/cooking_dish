@@ -1382,7 +1382,7 @@ function core.init()
         pApplicationInfo = appInfo,
         enabledExtensionCount = exts_count,
         ppEnabledExtensionNames = glfwExtensions,
-        enabledLayerCount = 0 -- We will add validation layers back later
+        enabledLayerCount = 1 -- We will add validation layers back later
     })
 
     -- 4. Create the Instance
