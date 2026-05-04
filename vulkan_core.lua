@@ -1404,7 +1404,7 @@ function core.init()
     vk.vkEnumeratePhysicalDevices(instance, pDeviceCount, nil)
     local pDevices = ffi.new("VkPhysicalDevice[?]", pDeviceCount[0])
     vk.vkEnumeratePhysicalDevices(instance, pDeviceCount, pDevices)
-    
+
     local physicalDevice = pDevices[0] -- Just grab the first GPU for now
     print("[LUA] Hardware GPU Selected!")
 

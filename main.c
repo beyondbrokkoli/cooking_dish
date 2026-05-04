@@ -8,6 +8,15 @@
 
 GLFWwindow* g_window = NULL;
 
+// GLOBAL VULKAN RESOURCES (Populated by Lua)
+VkBuffer g_buf_swarm_A = VK_NULL_HANDLE;
+VkBuffer g_buf_swarm_B = VK_NULL_HANDLE;
+VkBuffer g_buf_cage    = VK_NULL_HANDLE;
+
+void* g_mapped_swarm_A = NULL;
+void* g_mapped_swarm_B = NULL;
+void* g_mapped_cage    = NULL;
+
 // Bridge 1: Ask GLFW what OS extensions Vulkan needs
 static int l_get_glfw_extensions(lua_State* L) {
     uint32_t count = 0;
@@ -67,6 +76,21 @@ static int l_set_fullscreen(lua_State* L) {
     }
     return 0;
 }
+// Bridge 5: Hand off the constructed memory buffers to the C loop
+static int l_submit_buffers(lua_State* L) {
+    // 1. Read the VkBuffer handles
+    g_buf_swarm_A = (VkBuffer)(uintptr_t)luaL_checknumber(L, 1);
+    g_buf_swarm_B = (VkBuffer)(uintptr_t)luaL_checknumber(L, 2);
+    g_buf_cage    = (VkBuffer)(uintptr_t)luaL_checknumber(L, 3);
+
+    // 2. Read the Mapped VRAM Pointers
+    g_mapped_swarm_A = (void*)(uintptr_t)luaL_checknumber(L, 4);
+    g_mapped_swarm_B = (void*)(uintptr_t)luaL_checknumber(L, 5);
+    g_mapped_cage    = (void*)(uintptr_t)luaL_checknumber(L, 6);
+
+    printf("[C BRIDGE] GPU Buffers locked and loaded in C backend.\n");
+    return 0;
+}
 int main() {
     printf("[BOOT] Starting Naked Bootloader...\n");
 
@@ -84,6 +108,7 @@ int main() {
     lua_pushcfunction(L, l_create_surface);      lua_setfield(L, -2, "create_surface");
     lua_pushcfunction(L, l_get_window_size); lua_setfield(L, -2, "getWindowSize");
     lua_pushcfunction(L, l_set_fullscreen); lua_setfield(L, -2, "setFullscreen");
+    lua_pushcfunction(L, l_submit_buffers);      lua_setfield(L, -2, "submit_buffers");
 
     lua_setglobal(L, "C_Bridge");
 
