@@ -3,6 +3,7 @@ local vk_core = require("vulkan_core")
 local memory = require("memory")
 local descriptors = require("descriptors")
 local swapchain = require("swapchain") -- ADD THIS
+local graphics_pipeline = require("graphics_pipeline")
 
 -- Universal Vulkan Loader
 local success, vk = pcall(ffi.load, "vulkan-1")
@@ -30,6 +31,9 @@ function love_load()
     -- 4. Create the Swapchain (NEW!)
     local win_width, win_height = C_Bridge.getWindowSize()
     Engine.vk_swapchain = swapchain.Init(vk, Engine.vk_context, win_width, win_height)
+
+    -- 5. Build Graphics Dependencies (Depth + Shaders)
+    Engine.vk_graphics = graphics_pipeline.Init(vk, Engine.vk_context, win_width, win_height)
 
     -- 5. Extract the handles and cast them to raw numbers
     local bufA    = tonumber(ffi.cast("uintptr_t", memory.Buffers["SwarmA"]))

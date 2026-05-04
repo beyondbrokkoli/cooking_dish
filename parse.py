@@ -1,7 +1,23 @@
 import xml.etree.ElementTree as ET
 
 TARGET_STRUCTS = {
-    "VkPhysicalDeviceDynamicRenderingFeatures"
+    "VkPhysicalDeviceDynamicRenderingFeatures",
+    "VkImageCreateInfo",
+    "VkMemoryAllocateInfo",
+    "VkPipelineShaderStageCreateInfo",
+    "VkVertexInputBindingDescription",
+    "VkVertexInputAttributeDescription",
+    "VkPipelineVertexInputStateCreateInfo",
+    "VkPipelineInputAssemblyStateCreateInfo",
+    "VkPipelineViewportStateCreateInfo",
+    "VkPipelineRasterizationStateCreateInfo",
+    "VkPipelineMultisampleStateCreateInfo",
+    "VkPipelineDepthStencilStateCreateInfo",
+    "VkPipelineColorBlendAttachmentState",
+    "VkPipelineColorBlendStateCreateInfo",
+    "VkPipelineDynamicStateCreateInfo",
+    "VkGraphicsPipelineCreateInfo",
+    "VkPipelineRenderingCreateInfo" # THE DYNAMIC RENDERING MAGIC!
 }
 
 TARGET_FUNCTIONS = {
@@ -24,6 +40,9 @@ TARGET_FUNCTIONS = {
     "vkCreateGraphicsPipelines", "vkCreateComputePipelines",
     "vkCreatePipelineLayout", "vkDestroyPipeline", "vkDestroyPipelineLayout",
 
+    # Depth Buffer
+    "vkCreateImage", "vkGetImageMemoryRequirements", "vkBindImageMemory",
+
     # Command Buffers
     "vkCreateCommandPool", "vkDestroyCommandPool", "vkAllocateCommandBuffers",
     "vkBeginCommandBuffer", "vkEndCommandBuffer", "vkResetCommandBuffer",
@@ -37,7 +56,7 @@ TARGET_FUNCTIONS = {
     "vkCreateSemaphore", "vkDestroySemaphore",
     "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkDestroySwapchainKHR", "vkQueuePresentKHR",
     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", "vkGetSwapchainImagesKHR", "vkCreateImageView",
-    "vkDestroyImageView",
+    "vkDestroyImageView"
 }
 def generate_lua_ffi_cdef(xml_path):
     tree = ET.parse(xml_path)
