@@ -69,7 +69,7 @@ def generate_lua_ffi_cdef(xml_path):
 
     # 3. Recursively find nested structs (Dependencies)
     resolved_structs = set()
-    struct_dependencies = {} 
+    struct_dependencies = {}
 
     def resolve_dependencies(type_name):
         if type_name in resolved_structs or type_name not in all_structs_xml:
