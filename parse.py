@@ -23,8 +23,36 @@ def generate_lua_ffi_cdef(xml_path):
             handle_name = name_elem.text
             ffi_declarations.append(f"typedef struct {handle_name}_T* {handle_name};")
 
-    # Dictionary to map struct names to their XML element
-    all_structs_xml = {s.get('name'): s for s in root.findall('.//types/type[@category="struct"]')}
+    # 1.5 Grab Enums and Bitmasks (Spoofed as ints/uints for LuaJIT memory layout)
+    ffi_declarations.append("\n// --- Enums & Bitmasks ---")
+    seen_types = set()
+    for type_tag in root.findall('.//types/type'):
+        category = type_tag.get('category')
+
+        name = type_tag.get('name') or (type_tag.find('name').text if type_tag.find('name') is not None else None)
+
+        if not name or name in seen_types:
+            continue
+
+        if category == 'enum':
+            ffi_declarations.append(f"typedef int {name};")
+            seen_types.add(name)
+        elif category == 'bitmask':
+            base_type_elem = type_tag.find('type')
+            base_type = base_type_elem.text if base_type_elem is not None else "uint32_t"
+            ffi_declarations.append(f"typedef {base_type} {name};")
+            seen_types.add(name)
+        elif category == 'basetype':
+            base_type_elem = type_tag.find('type')
+            if base_type_elem is not None and name:
+                ffi_declarations.append(f"typedef {base_type_elem.text} {name};")
+                seen_types.add(name)
+
+    # Dictionary to map struct/union names to their XML element
+    all_structs_xml = {}
+    for s in root.findall('.//types/type'):
+        if s.get('category') in ('struct', 'union'):
+            all_structs_xml[s.get('name')] = s
 
     # 2. Figure out which structs our TARGET_FUNCTIONS need directly
     required_types = set()
@@ -88,7 +116,9 @@ def generate_lua_ffi_cdef(xml_path):
             member_text = "".join(member.itertext()).strip()
             members.append(f"    {' '.join(member_text.split())};")
 
-        ffi_declarations.append(f"typedef struct {struct_name} {{\n" + "\n".join(members) + f"\n}} {struct_name};")
+        # Check if this is a struct or a union to emit the correct C syntax
+        category = struct_xml.get('category', 'struct')
+        ffi_declarations.append(f"typedef {category} {struct_name} {{\n" + "\n".join(members) + f"\n}} {struct_name};")
         emitted.add(struct_name)
 
     for s in resolved_structs:
@@ -135,10 +165,11 @@ if __name__ == "__main__":
 
     # Base types needed to keep LuaJIT happy
     print("// --- Base Types ---")
-    print("typedef uint32_t VkFlags;")
-    print("typedef uint64_t VkDeviceSize;")
-    print("typedef uint32_t VkBool32;")
-    print("typedef uint64_t VkDeviceAddress;")
+    # print("typedef uint32_t VkFlags;")
+    # print("typedef uint64_t VkFlags64;")  # <--- ADD THIS LINE
+    # print("typedef uint64_t VkDeviceSize;")
+    # print("typedef uint32_t VkBool32;")
+    # print("typedef uint64_t VkDeviceAddress;")
     print("typedef void* PFN_vkVoidFunction;")
     print("typedef void* PFN_vkAllocationFunction;")
     print("typedef void* PFN_vkReallocationFunction;")
