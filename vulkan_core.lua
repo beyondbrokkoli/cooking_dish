@@ -1392,7 +1392,11 @@ function core.init()
     print("[LUA] Vulkan Instance Created!")
 
     -- 5. Ask C to create the Window Surface using our new Instance
-    local surface = C_Bridge.create_surface(instance)
+    -- We cast the pointer to a raw number so C can read it safely without FFI metadata
+    local instance_address = tonumber(ffi.cast("uintptr_t", instance))
+    local surface = C_Bridge.create_surface(instance_address)
+    -- The surface comes back as a number, so we cast it back to a Vulkan handle
+    surface = ffi.cast("VkSurfaceKHR", surface)
     print("[LUA] Window Surface Linked!")
 
     -- 6. Find the GPU

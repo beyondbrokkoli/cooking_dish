@@ -19,15 +19,22 @@ static int l_get_glfw_extensions(lua_State* L) {
 
 // Bridge 2: Ask GLFW to create the Vulkan Surface for our Window
 static int l_create_surface(lua_State* L) {
-    // Lua passes the VkInstance down to C
-    VkInstance instance = (VkInstance)lua_touserdata(L, 1);
-    VkSurfaceKHR surface;
-    if (glfwCreateWindowSurface(instance, g_window, NULL, &surface) != VK_SUCCESS) {
-        printf("FATAL: GLFW Failed to create Vulkan Surface!\n");
+    // 1. Read the raw memory address as a standard number
+    uintptr_t addr = (uintptr_t)luaL_checknumber(L, 1);
+    
+    // 2. Cast it back to a Vulkan Instance
+    VkInstance instance = (VkInstance)addr;
+    
+    VkSurfaceKHR surface; 
+    VkResult res = glfwCreateWindowSurface(instance, g_window, NULL, &surface);
+    
+    if (res != VK_SUCCESS) {
+        printf("FATAL: GLFW Failed to create Vulkan Surface! Error code: %d\n", res);
         exit(-1);
     }
-    // Hand the Surface handle back up to Lua
-    lua_pushlightuserdata(L, surface);
+    
+    // Pass the surface pointer back to Lua as a raw number!
+    lua_pushnumber(L, (lua_Number)(uintptr_t)surface);
     return 1;
 }
 
