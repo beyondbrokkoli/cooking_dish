@@ -1,25 +1,3 @@
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$ lua build_orchestrator.lua win
-========================================
-   VIBE ENGINE BUILD ORCHESTRATOR
-   Target Platform: WIN
-========================================
-
-[1/3] Compiling SPIR-V Shaders...
-
-[2/3] Compiling AVX2 Physics Backend (.dll) ...
-
-[3/3] Compiling Vulkan Host (.exe) ...
-
-[4/4] Packing Windows Dependencies (DLLs)...
-  |- DLLs copied successfully.
-
-[SUCCESS] Engine build complete!
-
-
---- AI SNAPSHOT ---
-
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
 $ ./swarm_gpu.exe
 [BOOT] Starting Naked Bootloader...
 [LUA] love_load executing...
@@ -27,14 +5,19 @@ $ ./swarm_gpu.exe
 [LUA] Vulkan Instance Created!
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
-[LUA FATAL ERROR]: .\vulkan_core.lua:1459: declaration specifier expected near 'VkPhysicalDeviceDynamicRenderingFeatures'
+[LUA] Logical Device Created!
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02484bee3c28
+[MEMORY] Initializing GPU Buffer Manager...
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02484bee3c28
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[C BRIDGE] GPU Buffers locked and loaded in C backend.
+[LUA] Engine Boot Sequence Complete.
+[BOOT] Entering Main Loop...
 
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$ nano vulkan_core.lua
-
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$ cat vulkan_core.lua | grep VkPhysicalDeviceDynamicRendering
-    local dynamicRendering = ffi.new("VkPhysicalDeviceDynamicRenderingFeatures", {
-
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$
