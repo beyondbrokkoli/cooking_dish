@@ -6,15 +6,15 @@ $ ./swarm_gpu.exe
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
 [LUA] Logical Device Created!
-[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02c4f207dfd8
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x0131e3a1e4d8
 [MEMORY] Initializing GPU Buffer Manager...
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c4f207dfd8
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x0131e3a1e4d8
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c4f207dfd8
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x0131e3a1e4d8
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c4f207dfd8
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x0131e3a1e4d8
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
 [DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
@@ -22,4 +22,8 @@ $ ./swarm_gpu.exe
 [SWAPCHAIN] Building the display chain...
 [SWAPCHAIN] Created successfully with 3 images!
 [GRAPHICS] Building Depth Buffer and Shader Modules...
-[LUA FATAL ERROR]: .\graphics_pipeline.lua:9: FATAL: Failed to open shader file: render_vert.spv
+[GRAPHICS] Depth Buffer and Shader Modules Ready.
+[GRAPHICS] Graphics Pipeline Successfully Compiled!
+[C BRIDGE] GPU Buffers locked and loaded in C backend.
+[LUA] Engine Boot Sequence Complete.
+[BOOT] Entering Main Loop...
