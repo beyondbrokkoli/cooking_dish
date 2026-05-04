@@ -120,7 +120,10 @@ def generate_lua_ffi_cdef(xml_path):
 
             param_text = "".join(param.itertext()).strip()
             param_text = " ".join(param_text.split())
-            params.append(param_text)
+
+            # SURGICAL PATCH: Prevent duplicate parameters in the signature
+            if param_text not in params:
+                params.append(param_text)
 
         param_str = ", ".join(params) if params else "void"
         ffi_declarations.append(f"{signature}({param_str});")
