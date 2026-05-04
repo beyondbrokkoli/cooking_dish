@@ -1,3 +1,25 @@
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
+$ lua build_orchestrator.lua win
+========================================
+   VIBE ENGINE BUILD ORCHESTRATOR
+   Target Platform: WIN
+========================================
+
+[1/3] Compiling SPIR-V Shaders...
+
+[2/3] Compiling AVX2 Physics Backend (.dll) ...
+
+[3/3] Compiling Vulkan Host (.exe) ...
+
+[4/4] Packing Windows Dependencies (DLLs)...
+  |- DLLs copied successfully.
+
+[SUCCESS] Engine build complete!
+
+
+--- AI SNAPSHOT ---
+
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
 $ ./swarm_gpu.exe
 [BOOT] Starting Naked Bootloader...
 [LUA] love_load executing...
@@ -5,4 +27,14 @@ $ ./swarm_gpu.exe
 [LUA] Vulkan Instance Created!
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
-[BOOT] Entering Main Loop...
+[LUA FATAL ERROR]: .\vulkan_core.lua:1459: declaration specifier expected near 'VkPhysicalDeviceDynamicRenderingFeatures'
+
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
+$ nano vulkan_core.lua
+
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
+$ cat vulkan_core.lua | grep VkPhysicalDeviceDynamicRendering
+    local dynamicRendering = ffi.new("VkPhysicalDeviceDynamicRenderingFeatures", {
+
+AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
+$
