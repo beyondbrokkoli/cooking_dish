@@ -3,31 +3,32 @@ import xml.etree.ElementTree as ET
 TARGET_FUNCTIONS = {
     # Instance/Device/Queues
     "vkCreateInstance", "vkEnumeratePhysicalDevices", "vkCreateDevice", "vkDestroyInstance", "vkDestroyDevice",
-    "vkQueueSubmit", "vkQueueWaitIdle", "vkDeviceWaitIdle",
-    
+    "vkQueueSubmit", "vkQueueWaitIdle", "vkDeviceWaitIdle", "vkGetPhysicalDeviceQueueFamilyProperties",
+    "vkGetDeviceQueue",
+
     # Memory/Buffers (The ReBAR Allocator)
-    "vkGetPhysicalDeviceMemoryProperties", "vkCreateBuffer", "vkDestroyBuffer", 
-    "vkGetBufferMemoryRequirements", "vkAllocateMemory", "vkBindBufferMemory", 
+    "vkGetPhysicalDeviceMemoryProperties", "vkCreateBuffer", "vkDestroyBuffer",
+    "vkGetBufferMemoryRequirements", "vkAllocateMemory", "vkBindBufferMemory",
     "vkMapMemory", "vkUnmapMemory", "vkFreeMemory",
 
     # Descriptors (The Wiring)
-    "vkCreateDescriptorSetLayout", "vkCreateDescriptorPool", "vkAllocateDescriptorSets", 
+    "vkCreateDescriptorSetLayout", "vkCreateDescriptorPool", "vkAllocateDescriptorSets",
     "vkUpdateDescriptorSets", "vkDestroyDescriptorPool", "vkDestroyDescriptorSetLayout",
 
     # Pipelines & Shaders
     "vkCreateShaderModule", "vkDestroyShaderModule",
-    "vkCreateGraphicsPipelines", "vkCreateComputePipelines", 
+    "vkCreateGraphicsPipelines", "vkCreateComputePipelines",
     "vkCreatePipelineLayout", "vkDestroyPipeline", "vkDestroyPipelineLayout",
 
     # Command Buffers
     "vkCreateCommandPool", "vkDestroyCommandPool", "vkAllocateCommandBuffers",
-    "vkBeginCommandBuffer", "vkEndCommandBuffer", "vkResetCommandBuffer", 
-    "vkCmdBindPipeline", "vkCmdBindDescriptorSets", "vkCmdPushConstants", 
+    "vkBeginCommandBuffer", "vkEndCommandBuffer", "vkResetCommandBuffer",
+    "vkCmdBindPipeline", "vkCmdBindDescriptorSets", "vkCmdPushConstants",
     "vkCmdDispatch", "vkCmdPipelineBarrier",
 
     # Graphics/Rendering specific
     "vkCmdBeginRendering", "vkCmdDraw", "vkCmdEndRendering",
-    
+
     # Swapchain & Sync
     "vkCreateSemaphore", "vkDestroySemaphore",
     "vkAcquireNextImageKHR", "vkCreateSwapchainKHR", "vkDestroySwapchainKHR", "vkQueuePresentKHR"
