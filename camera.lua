@@ -16,7 +16,6 @@ end
 -- 2. THE INVERTED MOUSE FIX
 local function apply_look(state, dx, dy)
     state.yaw = state.yaw + (dx * state.sensitivity)
-    -- Flipped the minus to a plus to un-invert the Y axis!
     state.pitch = state.pitch - (dy * state.sensitivity) 
     
     if state.pitch > 89.0 then state.pitch = 89.0 end
@@ -39,10 +38,10 @@ local function apply_movement(state, dt)
         state.x = state.x - fx * moveSpeed; state.z = state.z - fz * moveSpeed 
     end
     if love.keyboard.isDown("a") then 
-        state.x = state.x - rx * moveSpeed; state.z = state.z - rz * moveSpeed 
+        state.x = state.x + rx * moveSpeed; state.z = state.z + rz * moveSpeed 
     end
     if love.keyboard.isDown("d") then 
-        state.x = state.x + rx * moveSpeed; state.z = state.z + rz * moveSpeed 
+        state.x = state.x - rx * moveSpeed; state.z = state.z - rz * moveSpeed 
     end
 end
 
