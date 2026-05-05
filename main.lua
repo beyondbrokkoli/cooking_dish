@@ -168,7 +168,9 @@ function love_load()
         print("[NET] Sleeping.")
     end
     print("=============================================\n")
-
+    -- Lock the mouse to the center of the window and hide the cursor
+    C_Bridge.setRelativeMode(true)
+    print("[LUA] FPS Mouse Relative Mode Enabled!")
 
 
 
@@ -180,8 +182,26 @@ end
 
 -- Or join one:
 -- C_Bridge.net_join("127.0.0.1", 25000)
+local debug_timer = 0
 
 function love_update(dt)
+    -- Pipe data to logic
+    camera_math.apply_movement(cam_state, dt)
+    camera_math.build_matrix(cam_state, Engine.vk_swapchain.extent.width, Engine.vk_swapchain.extent.height)
+
+    -- Push to C
+    C_Bridge.setCameraMatrix(unpack(cam_state.mat))
+
+    -- Spam the console twice a second to verify the math
+    debug_timer = debug_timer + dt
+    if debug_timer > 0.5 then
+        print(string.format("[CAM] Pos: x=%.2f, y=%.2f, z=%.2f | Yaw: %.2f, Pitch: %.2f", 
+            cam_state.x, cam_state.y, cam_state.z, 
+            cam_state.yaw, cam_state.pitch))
+        debug_timer = 0
+    end
+end
+function OLD_love_update(dt)
     -- Pipe data to logic
     camera_math.apply_movement(cam_state, dt)
     camera_math.build_matrix(cam_state, Engine.vk_swapchain.extent.width, Engine.vk_swapchain.extent.height)
