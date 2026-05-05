@@ -49,3 +49,16 @@ function love_load()
 
     print("[LUA] Engine Boot Sequence Complete.")
 end
+-- Host a server:
+-- C_Bridge.net_host(25000)
+
+-- Or join one:
+-- C_Bridge.net_join("127.0.0.1", 25000)
+
+function love_update()
+    -- Non-blocking poll!
+    local msg = C_Bridge.net_poll()
+    if msg then
+        print("[NET IN]: " .. msg)
+    end
+end
