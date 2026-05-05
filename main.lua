@@ -20,7 +20,21 @@ function love_load()
     
     -- 2. Boot GPU Memory Manager
     memory.Init(vk, Engine.vk_context)
-
+    -- ========================================================
+    -- THE BIG BANG (Seed the initial particle positions)
+    -- ========================================================
+    print("[LUA] Seeding 2.5 Million Particles... (Standby)")
+    math.randomseed(os.time())
+    local swarmA = memory.Mapped["SwarmA"]
+    
+    for i = 0, 2500000 - 1 do
+        -- Spread them randomly in a 200x200x200 cube
+        swarmA[i].x = (math.random() - 0.5) * 200.0
+        swarmA[i].y = (math.random() - 0.5) * 200.0
+        swarmA[i].z = (math.random() - 0.5) * 200.0
+        swarmA[i].padding = 1.0
+    end
+    print("[LUA] Big Bang Complete!")
     -- 3. Wire up the Compute Descriptors
     Engine.vk_descriptors = descriptors.Init(
         vk, 
