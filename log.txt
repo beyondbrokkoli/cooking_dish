@@ -6,15 +6,15 @@ $ ./swarm_gpu.exe
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
 [LUA] Logical Device Created!
-[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02c380201c98
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x01fcf9732048
 [MEMORY] Initializing GPU Buffer Manager...
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c380201c98
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01fcf9732048
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c380201c98
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01fcf9732048
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02c380201c98
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01fcf9732048
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
 [LUA] Seeding 2.5 Million Particles... (Standby)
@@ -28,7 +28,7 @@ $ ./swarm_gpu.exe
 [GRAPHICS] Graphics Pipeline Successfully Compiled!
 [COMPUTE] Compiling Swarm Intelligence...
 [COMPUTE] Swarm Pipeline Ready!
-[C BRIDGE] Rebuilt VkDevice: 000002c380201c98
+[C BRIDGE] Rebuilt VkDevice: 000001fcf9732048
 [C BRIDGE] GPU Buffers safely locked via 64-bit strings.
 [LUA] Engine Boot Sequence Complete.
 [C BRIDGE] GPU Buffers safely locked via 64-bit strings.
@@ -45,10 +45,88 @@ Any other key = Single Player
 [NET] Hosting! Waiting for connections...
 =============================================
 
+[LUA] FPS Mouse Relative Mode Enabled!
 [BOOT] Entering Main Loop...
 [C DEBUG] 0. Extracting raw AMD driver functions...
 [C DEBUG] 1. Creating Command Pool...
 [C DEBUG] 2. Allocating Command Buffers...
 [C DEBUG] 3. Creating Sync Objects...
 [C DEBUG] 4. Launching the Render Loop!
-[LUA FATAL ERROR]: .\camera.lua:19: attempt to perform arithmetic on local 'dt' (a nil value)
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -90.00, Pitch: 0.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -90.00, Pitch: 0.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -90.00, Pitch: 0.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -90.00, Pitch: 0.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -90.00, Pitch: 0.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -113.10, Pitch: -24.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -113.10, Pitch: -24.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -112.10, Pitch: -74.30
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -147.90, Pitch: -70.20
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -175.50, Pitch: -89.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -175.50, Pitch: -89.00
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -252.00, Pitch: -84.70
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -253.50, Pitch: -72.50
+[CAM] Pos: x=0.00, y=0.00, z=-5.00 | Yaw: -258.40, Pitch: -84.80
+[CAM] Pos: x=0.18, y=0.00, z=-5.29 | Yaw: -238.80, Pitch: -83.20
+[CAM] Pos: x=4.44, y=0.00, z=-5.23 | Yaw: -238.60, Pitch: -82.00
+[CAM] Pos: x=5.46, y=0.00, z=-3.96 | Yaw: -270.60, Pitch: -76.70
+[CAM] Pos: x=4.28, y=0.00, z=-7.28 | Yaw: -266.50, Pitch: -75.50
+[CAM] Pos: x=6.60, y=0.00, z=-7.12 | Yaw: -266.10, Pitch: -75.30
+[CAM] Pos: x=7.39, y=0.00, z=-10.76 | Yaw: -265.00, Pitch: -75.00
+[CAM] Pos: x=5.15, y=0.00, z=-13.32 | Yaw: -252.70, Pitch: -75.00
+[CAM] Pos: x=0.38, y=0.00, z=-14.82 | Yaw: -252.40, Pitch: -74.20
+[CAM] Pos: x=-4.39, y=0.00, z=-16.34 | Yaw: -252.20, Pitch: -73.30
+[CAM] Pos: x=-7.24, y=0.00, z=-17.26 | Yaw: -252.20, Pitch: -72.90
+[CAM] Pos: x=-8.99, y=0.00, z=-17.82 | Yaw: -252.20, Pitch: -72.60
+[CAM] Pos: x=-11.83, y=0.00, z=-18.74 | Yaw: -252.10, Pitch: -72.40
+[CAM] Pos: x=-14.22, y=0.00, z=-19.51 | Yaw: -252.10, Pitch: -72.30
+[CAM] Pos: x=-15.32, y=0.00, z=-19.86 | Yaw: -252.00, Pitch: -72.10
+[CAM] Pos: x=-14.62, y=0.00, z=-17.16 | Yaw: -236.80, Pitch: -63.10
+[CAM] Pos: x=-13.37, y=0.00, z=-16.34 | Yaw: -236.60, Pitch: -63.00
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -237.30, Pitch: -68.00
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -169.70, Pitch: -89.00
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -156.20, Pitch: -37.90
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -183.90, Pitch: 33.10
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -211.90, Pitch: 49.40
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -242.00, Pitch: -3.10
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -183.70, Pitch: -3.00
+[CAM] Pos: x=-14.48, y=0.00, z=-17.07 | Yaw: -226.50, Pitch: 6.90
+[CAM] Pos: x=-13.96, y=0.00, z=-18.88 | Yaw: -222.70, Pitch: -2.50
+[CAM] Pos: x=-14.37, y=0.00, z=-19.16 | Yaw: -187.00, Pitch: 45.00
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -212.80, Pitch: 43.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -219.30, Pitch: 39.60
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -232.70, Pitch: 67.40
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -214.50, Pitch: 52.70
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -264.70, Pitch: 50.50
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -161.30, Pitch: 59.10
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -109.60, Pitch: 73.20
+[CAM] Pos: x=-16.52, y=0.00, z=-17.52 | Yaw: -166.90, Pitch: 67.00
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -137.90, Pitch: 74.60
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -146.80, Pitch: 82.00
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -146.80, Pitch: 82.00
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -197.00, Pitch: 79.80
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -197.00, Pitch: 79.80
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -197.00, Pitch: 79.80
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -197.00, Pitch: 79.80
+[CAM] Pos: x=-15.05, y=0.00, z=-17.16 | Yaw: -197.00, Pitch: 79.80
