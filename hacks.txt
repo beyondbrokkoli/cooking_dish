@@ -1,0 +1,52 @@
+$ ./swarm_gpu.exe
+[BOOT] Starting Naked Bootloader...
+[LUA] love_load executing...
+[LUA] Initializing Vulkan Core...
+[LUA] Vulkan Instance Created!
+[LUA] Window Surface Linked!
+[LUA] Hardware GPU Selected!
+[LUA] Logical Device Created!
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x01469cf4ff88
+[MEMORY] Initializing GPU Buffer Manager...
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01469cf4ff88
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01469cf4ff88
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01469cf4ff88
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
+[DESCRIPTORS] Ping-Pong Sets successfully wired!
+[SWAPCHAIN] Building the display chain...
+[SWAPCHAIN] Created successfully with 3 images!
+[GRAPHICS] Building Depth Buffer and Shader Modules...
+[GRAPHICS] Depth Buffer and Shader Modules Ready.
+[GRAPHICS] Graphics Pipeline Successfully Compiled!
+[COMPUTE] Compiling Swarm Intelligence...
+[COMPUTE] Swarm Pipeline Ready!
+[C BRIDGE] Rebuilt VkDevice: 000001469cf4ff88
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+
+=============================================
+ ­ƒôí VIBE ENGINE NETWORK BOOTSTRAP ­ƒôí
+=============================================
+Do you want to host? [Press ENTER]
+Is someone online? Type 'J' to Join 127.0.0.1
+Any other key = Single Player
+>
+[NETWORK] Hosting UDP on port 25000
+[NET] Hosting! Waiting for connections...
+=============================================
+
+[BOOT] Entering Main Loop...
+[C DEBUG] 0. Extracting raw AMD driver functions...
+[C DEBUG] 1. Creating Command Pool...
+[C DEBUG] 2. Allocating Command Buffers...
+[C DEBUG] 3. Creating Sync Objects...
+[C DEBUG] 4. Launching the Render Loop!
+
