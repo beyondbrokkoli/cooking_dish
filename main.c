@@ -28,19 +28,27 @@ VkDescriptorSet g_compSet1;
 VkImage g_swapchainImages[10];
 VkImageView g_swapchainViews[10];
 
-// NOTE: Assuming your buffers from l_submit_buffers are named this based on your old code!
-extern VkBuffer bufAoS_A; 
-extern VkBuffer bufAoS_B;
+// ========================================================
+// GPU BUFFER STATE GLOBALS
+// ========================================================
+VkBuffer g_buf_swarm_A;
+VkBuffer g_buf_swarm_B;
+VkBuffer g_buf_cage;
+
+void* g_mapped_swarm_A;
+void* g_mapped_swarm_B;
+void* g_mapped_cage;
 
 // ========================================================
 // LUA HANDOFF FUNCTIONS
 // ========================================================
 // [BRIDGE] 1. Core State
+// [BRIDGE] 1. Core State
 static int l_set_core_handles(lua_State* L) {
-    g_device     = (VkDevice)(uintptr_t)lua_tonumber(L, 1);
-    g_queue      = (VkQueue)(uintptr_t)lua_tonumber(L, 2);
-    g_qIndex     = (uint32_t)lua_tointeger(L, 3);
-    g_swapchain  = (VkSwapchainKHR)(uintptr_t)lua_tonumber(L, 4);
+    g_device     = (VkDevice)strtoull(lua_tostring(L, 1), NULL, 10);
+    g_queue      = (VkQueue)strtoull(lua_tostring(L, 2), NULL, 10);
+    g_qIndex     = (uint32_t)lua_tointeger(L, 3); // qIndex is small, integer is safe!
+    g_swapchain  = (VkSwapchainKHR)strtoull(lua_tostring(L, 4), NULL, 10);
     g_imageCount = (uint32_t)lua_tointeger(L, 5);
     g_width      = (uint32_t)lua_tointeger(L, 6);
     g_height     = (uint32_t)lua_tointeger(L, 7);
@@ -49,14 +57,14 @@ static int l_set_core_handles(lua_State* L) {
 
 // [BRIDGE] 2. Pipeline State
 static int l_set_pipeline_handles(lua_State* L) {
-    g_gfxPipeline  = (VkPipeline)(uintptr_t)lua_tonumber(L, 1);
-    g_gfxLayout    = (VkPipelineLayout)(uintptr_t)lua_tonumber(L, 2);
-    g_compPipeline = (VkPipeline)(uintptr_t)lua_tonumber(L, 3);
-    g_compLayout   = (VkPipelineLayout)(uintptr_t)lua_tonumber(L, 4);
-    g_depthImage   = (VkImage)(uintptr_t)lua_tonumber(L, 5);
-    g_depthView    = (VkImageView)(uintptr_t)lua_tonumber(L, 6);
-    g_compSet0     = (VkDescriptorSet)(uintptr_t)lua_tonumber(L, 7);
-    g_compSet1     = (VkDescriptorSet)(uintptr_t)lua_tonumber(L, 8);
+    g_gfxPipeline  = (VkPipeline)strtoull(lua_tostring(L, 1), NULL, 10);
+    g_gfxLayout    = (VkPipelineLayout)strtoull(lua_tostring(L, 2), NULL, 10);
+    g_compPipeline = (VkPipeline)strtoull(lua_tostring(L, 3), NULL, 10);
+    g_compLayout   = (VkPipelineLayout)strtoull(lua_tostring(L, 4), NULL, 10);
+    g_depthImage   = (VkImage)strtoull(lua_tostring(L, 5), NULL, 10);
+    g_depthView    = (VkImageView)strtoull(lua_tostring(L, 6), NULL, 10);
+    g_compSet0     = (VkDescriptorSet)strtoull(lua_tostring(L, 7), NULL, 10);
+    g_compSet1     = (VkDescriptorSet)strtoull(lua_tostring(L, 8), NULL, 10);
     return 0;
 }
 
@@ -64,9 +72,23 @@ static int l_set_pipeline_handles(lua_State* L) {
 static int l_set_swapchain_asset(lua_State* L) {
     uint32_t index = (uint32_t)lua_tointeger(L, 1);
     if (index < 10) {
-        g_swapchainImages[index] = (VkImage)(uintptr_t)lua_tonumber(L, 2);
-        g_swapchainViews[index]  = (VkImageView)(uintptr_t)lua_tonumber(L, 3);
+        g_swapchainImages[index] = (VkImage)strtoull(lua_tostring(L, 2), NULL, 10);
+        g_swapchainViews[index]  = (VkImageView)strtoull(lua_tostring(L, 3), NULL, 10);
     }
+    return 0;
+}
+
+// [BRIDGE] 4. Buffer Handoff (Update your existing one to this!)
+static int l_submit_buffers(lua_State* L) {
+    g_buf_swarm_A    = (VkBuffer)strtoull(lua_tostring(L, 1), NULL, 10);
+    g_buf_swarm_B    = (VkBuffer)strtoull(lua_tostring(L, 2), NULL, 10);
+    g_buf_cage       = (VkBuffer)strtoull(lua_tostring(L, 3), NULL, 10);
+
+    g_mapped_swarm_A = (void*)strtoull(lua_tostring(L, 4), NULL, 10);
+    g_mapped_swarm_B = (void*)strtoull(lua_tostring(L, 5), NULL, 10);
+    g_mapped_cage    = (void*)strtoull(lua_tostring(L, 6), NULL, 10);
+
+    printf("[C BRIDGE] GPU Buffers safely locked via 64-bit strings.\n");
     return 0;
 }
 // ========================================================
@@ -254,21 +276,7 @@ static int l_net_send(lua_State* L) {
     
     return 0;
 }
-// Bridge 5: Hand off the constructed memory buffers to the C loop
-static int l_submit_buffers(lua_State* L) {
-    // 1. Read the VkBuffer handles
-    g_buf_swarm_A = (VkBuffer)(uintptr_t)luaL_checknumber(L, 1);
-    g_buf_swarm_B = (VkBuffer)(uintptr_t)luaL_checknumber(L, 2);
-    g_buf_cage    = (VkBuffer)(uintptr_t)luaL_checknumber(L, 3);
 
-    // 2. Read the Mapped VRAM Pointers
-    g_mapped_swarm_A = (void*)(uintptr_t)luaL_checknumber(L, 4);
-    g_mapped_swarm_B = (void*)(uintptr_t)luaL_checknumber(L, 5);
-    g_mapped_cage    = (void*)(uintptr_t)luaL_checknumber(L, 6);
-
-    printf("[C BRIDGE] GPU Buffers locked and loaded in C backend.\n");
-    return 0;
-}
 int main() {
     printf("[BOOT] Starting Naked Bootloader...\n");
 
@@ -315,7 +323,7 @@ int main() {
     }
 
     printf("[BOOT] Entering Main Loop...\n");
-// ========================================================
+    // ========================================================
     // CREATE COMMAND POOL & SYNC OBJECTS (The Engine Block)
     // ========================================================
     VkCommandPoolCreateInfo poolInfo = {0};
