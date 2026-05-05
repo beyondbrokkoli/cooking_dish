@@ -5,11 +5,14 @@
 #include <luajit-2.1/lauxlib.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h> // <--- ADD THIS LINE
+#include <string.h>
+
 // ========================================================
-// VULKAN RENDER STATE GLOBALS
+// 1. GLOBALS & STATE
 // ========================================================
-VkInstance g_instance; // <--- ADD THIS GLOBAL
+GLFWwindow* g_window = NULL;
+
+VkInstance g_instance;
 VkDevice g_device;
 VkQueue g_queue;
 uint32_t g_qIndex;
@@ -29,20 +32,84 @@ VkDescriptorSet g_compSet1;
 VkImage g_swapchainImages[10];
 VkImageView g_swapchainViews[10];
 
-// ========================================================
-// GPU BUFFER STATE GLOBALS
-// ========================================================
-VkBuffer g_buf_swarm_A;
-VkBuffer g_buf_swarm_B;
-VkBuffer g_buf_cage;
+VkBuffer g_buf_swarm_A = VK_NULL_HANDLE;
+VkBuffer g_buf_swarm_B = VK_NULL_HANDLE;
+VkBuffer g_buf_cage    = VK_NULL_HANDLE;
 
-void* g_mapped_swarm_A;
-void* g_mapped_swarm_B;
-void* g_mapped_cage;
+void* g_mapped_swarm_A = NULL;
+void* g_mapped_swarm_B = NULL;
+void* g_mapped_cage    = NULL;
+
+// PUSH CONSTANTS (Camera)
+typedef struct {
+    float viewProj[16]; // 64 bytes
+} CameraPushConstants;
+
+CameraPushConstants g_cam_pc = {0};
+
+// CROSS-PLATFORM SOCKETS
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    typedef int socklen_t;
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #define SOCKET int
+    #define INVALID_SOCKET -1
+    #define SOCKET_ERROR -1
+    #define closesocket close
+#endif
+
+SOCKET g_udp_socket = INVALID_SOCKET;
+struct sockaddr_in g_peer_addr = {0};
 
 // ========================================================
-// LUA HANDOFF FUNCTIONS
+// 2. INPUT CALLBACKS (Triggered by OS)
 // ========================================================
+static double g_last_mouse_x = 0.0;
+static double g_last_mouse_y = 0.0;
+static int g_first_mouse = 1;
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    // VOODOO: Retrieve the Lua brain from the window's user pointer!
+    lua_State* L = (lua_State*)glfwGetWindowUserPointer(window);
+    
+    if (!L) return; // Safety check
+
+    if (g_first_mouse) {
+        g_last_mouse_x = xpos;
+        g_last_mouse_y = ypos;
+        g_first_mouse = 0;
+    }
+
+    double dx = xpos - g_last_mouse_x;
+    double dy = ypos - g_last_mouse_y;
+    g_last_mouse_x = xpos;
+    g_last_mouse_y = ypos;
+
+    // Fire the event into Lua
+    lua_getglobal(L, "love_mousemoved");
+    if (lua_isfunction(L, -1)) {
+        lua_pushnumber(L, xpos);
+        lua_pushnumber(L, ypos);
+        lua_pushnumber(L, dx);
+        lua_pushnumber(L, dy);
+        if (lua_pcall(L, 4, 0, 0) != LUA_OK) {
+            printf("[LUA ERROR in mousemoved] %s\n", lua_tostring(L, -1));
+        }
+    } else {
+        lua_pop(L, 1);
+    }
+}
+
+// ========================================================
+// 3. LUA FFI BRIDGE FUNCTIONS
+// ========================================================
+
 // [BRIDGE] 1. Core State
 static int l_set_core_handles(lua_State* L) {
     g_device     = (VkDevice)(uintptr_t)strtoull(lua_tostring(L, 1), NULL, 10);
@@ -92,39 +159,33 @@ static int l_submit_buffers(lua_State* L) {
     printf("[C BRIDGE] GPU Buffers safely locked via 64-bit strings.\n");
     return 0;
 }
-// ========================================================
-// CROSS-PLATFORM SOCKETS
-// ========================================================
-#ifdef _WIN32
-    #include <winsock2.h>
-    #include <ws2tcpip.h>
-    typedef int socklen_t;
-#else
-    #include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <arpa/inet.h>
-    #include <unistd.h>
-    #include <fcntl.h>
-    #define SOCKET int
-    #define INVALID_SOCKET -1
-    #define SOCKET_ERROR -1
-    #define closesocket close
-#endif
+// [BRIDGE] 5. Camera Matrix
+static int l_setCameraMatrix(lua_State* L) {
+    for (int i = 0; i < 16; i++) {
+        g_cam_pc.viewProj[i] = (float)lua_tonumber(L, i + 1);
+    }
+    return 0;
+}
 
-SOCKET g_udp_socket = INVALID_SOCKET;
-struct sockaddr_in g_peer_addr = {0}; // Who we are talking to
+// [BRIDGE] 6. Input Polling
+static int l_isKeyDown(lua_State* L) {
+    int key = luaL_checkinteger(L, 1);
+    lua_pushboolean(L, glfwGetKey(g_window, key) == GLFW_PRESS);
+    return 1;
+}
 
-GLFWwindow* g_window = NULL;
+static int l_isMouseDown(lua_State* L) {
+    int button = luaL_checkinteger(L, 1);
+    int state = glfwGetMouseButton(g_window, button - 1); // Love2D to GLFW index map
+    lua_pushboolean(L, state == GLFW_PRESS);
+    return 1;
+}
 
-// GLOBAL VULKAN RESOURCES (Populated by Lua)
-VkBuffer g_buf_swarm_A = VK_NULL_HANDLE;
-VkBuffer g_buf_swarm_B = VK_NULL_HANDLE;
-VkBuffer g_buf_cage    = VK_NULL_HANDLE;
-
-void* g_mapped_swarm_A = NULL;
-void* g_mapped_swarm_B = NULL;
-void* g_mapped_cage    = NULL;
-
+static int l_setRelativeMode(lua_State* L) {
+    int enable = lua_toboolean(L, 1);
+    glfwSetInputMode(g_window, GLFW_CURSOR, enable ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    return 0;
+}
 // Bridge 1: Ask GLFW what OS extensions Vulkan needs
 static int l_get_glfw_extensions(lua_State* L) {
     uint32_t count = 0;
@@ -278,104 +339,51 @@ static int l_net_send(lua_State* L) {
     return 0;
 }
 // ========================================================
-// INPUT STATE & CALLBACKS
+// 4. MAIN ENTRY POINT
 // ========================================================
-static double g_last_mouse_x = 0.0;
-static double g_last_mouse_y = 0.0;
-static int g_first_mouse = 1;
-
-// Make sure your lua_State* is globally accessible, e.g., 'g_L'
-extern lua_State* g_L; 
-extern GLFWwindow* g_window;
-
-void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
-    if (g_first_mouse) { 
-        g_last_mouse_x = xpos; 
-        g_last_mouse_y = ypos; 
-        g_first_mouse = 0; 
-    }
-    
-    double dx = xpos - g_last_mouse_x;
-    double dy = ypos - g_last_mouse_y;
-    g_last_mouse_x = xpos; 
-    g_last_mouse_y = ypos;
-
-    // Fire the event into Lua
-    lua_getglobal(g_L, "love_mousemoved");
-    if (lua_isfunction(g_L, -1)) {
-        lua_pushnumber(g_L, xpos);
-        lua_pushnumber(g_L, ypos);
-        lua_pushnumber(g_L, dx);
-        lua_pushnumber(g_L, dy);
-        if (lua_pcall(g_L, 4, 0, 0) != LUA_OK) {
-            printf("[LUA ERROR in mousemoved] %s\n", lua_tostring(g_L, -1));
-            lua_pop(g_L, 1);
-        }
-    } else {
-        lua_pop(g_L, 1); // Not a function, pop it off the stack
-    }
-}
-// ========================================================
-// LUA FFI BRIDGE: INPUT
-// ========================================================
-
-// Maps to Engine.isKeyDown(key_code)
-static int l_isKeyDown(lua_State* L) { 
-    int key = luaL_checkinteger(L, 1); 
-    lua_pushboolean(L, glfwGetKey(g_window, key) == GLFW_PRESS); 
-    return 1; 
-}
-
-// Maps to Engine.isMouseDown(button)
-static int l_isMouseDown(lua_State* L) {
-    int button = luaL_checkinteger(L, 1);
-    // Love2D uses 1 for Left. GLFW uses 0 for Left. Map the index.
-    int state = glfwGetMouseButton(g_window, button - 1);
-    lua_pushboolean(L, state == GLFW_PRESS);
-    return 1;
-}
-
-// Maps to Engine.setRelativeMode(bool) - Crucial for FPS camera!
-static int l_setRelativeMode(lua_State* L) { 
-    int enable = lua_toboolean(L, 1);
-    glfwSetInputMode(g_window, GLFW_CURSOR, enable ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL); 
-    return 0; 
-}
 int main() {
     printf("[BOOT] Starting Naked Bootloader...\n");
 
     glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API); // Tell GLFW we aren't using OpenGL
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     g_window = glfwCreateWindow(1280, 720, "VibeEngine - Cooking Dish", NULL, NULL);
+
+    // HOOK GLFW CALLBACKS HERE
+    glfwSetCursorPosCallback(g_window, cursor_position_callback);
 
     lua_State* L = luaL_newstate();
     luaL_openlibs(L);
 
+    // VOODOO: Store the Lua state inside the GLFW window
+    glfwSetWindowUserPointer(g_window, L);
+
     // Register our Bridge Functions
     lua_newtable(L);
+    
+    // Core & Vulkan
     lua_pushcfunction(L, l_get_glfw_extensions); lua_setfield(L, -2, "get_glfw_extensions");
     lua_pushcfunction(L, l_create_surface);      lua_setfield(L, -2, "create_surface");
-    lua_pushcfunction(L, l_get_window_size); lua_setfield(L, -2, "getWindowSize");
-    lua_pushcfunction(L, l_set_fullscreen); lua_setfield(L, -2, "setFullscreen");
+    lua_pushcfunction(L, l_get_window_size);     lua_setfield(L, -2, "getWindowSize");
+    lua_pushcfunction(L, l_set_fullscreen);      lua_setfield(L, -2, "setFullscreen");
     lua_pushcfunction(L, l_submit_buffers);      lua_setfield(L, -2, "submit_buffers");
-    lua_pushcfunction(L, l_net_host); lua_setfield(L, -2, "net_host");
-    lua_pushcfunction(L, l_net_join); lua_setfield(L, -2, "net_join");
-    lua_pushcfunction(L, l_net_poll); lua_setfield(L, -2, "net_poll");
-    lua_pushcfunction(L, l_net_send); lua_setfield(L, -2, "net_send");
-    lua_pushcfunction(L, l_set_core_handles); lua_setfield(L, -2, "set_core_handles");
-    lua_pushcfunction(L, l_set_pipeline_handles); lua_setfield(L, -2, "set_pipeline_handles");
+    lua_pushcfunction(L, l_set_core_handles);    lua_setfield(L, -2, "set_core_handles");
+    lua_pushcfunction(L, l_set_pipeline_handles);lua_setfield(L, -2, "set_pipeline_handles");
     lua_pushcfunction(L, l_set_swapchain_asset); lua_setfield(L, -2, "set_swapchain_asset");
-    // Register Camera Matrix bridge (from earlier)
-    lua_pushcfunction(g_L, l_setCameraMatrix);
-    lua_setfield(g_L, -2, "setCameraMatrix");
+    
+    // Network
+    lua_pushcfunction(L, l_net_host);            lua_setfield(L, -2, "net_host");
+    lua_pushcfunction(L, l_net_join);            lua_setfield(L, -2, "net_join");
+    lua_pushcfunction(L, l_net_poll);            lua_setfield(L, -2, "net_poll");
+    lua_pushcfunction(L, l_net_send);            lua_setfield(L, -2, "net_send");
+    
+    // New DOD Input & Camera Matrix
+    lua_pushcfunction(L, l_setCameraMatrix);     lua_setfield(L, -2, "setCameraMatrix");
+    lua_pushcfunction(L, l_isKeyDown);           lua_setfield(L, -2, "isKeyDown");
+    lua_pushcfunction(L, l_isMouseDown);         lua_setfield(L, -2, "isMouseDown");
+    lua_pushcfunction(L, l_setRelativeMode);     lua_setfield(L, -2, "setRelativeMode");
 
-    // Register Input bridges
-    lua_pushcfunction(g_L, l_isKeyDown); lua_setfield(g_L, -2, "isKeyDown");
-
-    lua_pushcfunction(g_L, l_isMouseDown); lua_setfield(g_L, -2, "isMouseDown");
-    lua_pushcfunction(g_L, l_setRelativeMode); lua_setfield(g_L, -2, "setRelativeMode");
-
+    // Expose all functions to Lua under the "C_Bridge" global table
     lua_setglobal(L, "C_Bridge");
 
     // Boot the Lua Brain
