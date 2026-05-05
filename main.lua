@@ -132,11 +132,6 @@ function love_load()
 
     print("[LUA] Engine Boot Sequence Complete.")
 
-    -- 6. Hand off to C!
-    C_Bridge.submit_buffers(bufA, bufB, bufCage, ptrA, ptrB, ptrCage)
-
-    print("[LUA] Engine Boot Sequence Complete.")
-
     -- ========================================================
     -- 7. THE DUMB & EFFICIENT NETWORK BOOTSTRAP
     -- ========================================================
