@@ -99,10 +99,13 @@ function core.init()
         pQueuePriorities = queuePriority
     })
 
-    -- Enable Swapchain (Windowing) Extension
-    local deviceExtensions = ffi.new("const char*[1]", {"VK_KHR_swapchain"})
+    -- Enable Swapchain AND Dynamic Rendering explicitly!
+    local deviceExtensions = ffi.new("const char*[2]", {
+        "VK_KHR_swapchain", 
+        "VK_KHR_dynamic_rendering" -- <--- ADDED THIS!
+    })
 
-    -- Enable Dynamic Rendering (Crucial for VibeEngine!)
+    -- Enable Dynamic Rendering Feature struct
     local dynamicRendering = ffi.new("VkPhysicalDeviceDynamicRenderingFeatures", {
         sType = 1000044003, -- VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES
         dynamicRendering = 1 -- VK_TRUE
@@ -113,7 +116,7 @@ function core.init()
         pNext = dynamicRendering,
         queueCreateInfoCount = 1,
         pQueueCreateInfos = queueCreateInfo,
-        enabledExtensionCount = 1,
+        enabledExtensionCount = 2, -- <--- CHANGED TO 2!
         ppEnabledExtensionNames = deviceExtensions
     })
 

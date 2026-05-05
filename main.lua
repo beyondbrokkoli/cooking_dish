@@ -43,7 +43,14 @@ function love_load()
         return string.match(tostring(cdata_num), "%d+")
     end
 
-    -- 7. THE CORE HANDOFF (7 Arguments exactly)
+    -- 6. Build Compute Dependencies (RESTORED!)
+    Engine.vk_compute = compute_pipeline.Init(
+        vk,
+        Engine.vk_context.device,
+        Engine.vk_descriptors.pipelineLayout
+    )
+
+    -- 7. THE CORE HANDOFF
     C_Bridge.set_core_handles(
         ptr2str(Engine.vk_context.device),
         ptr2str(Engine.vk_context.queue),
@@ -54,11 +61,12 @@ function love_load()
         Engine.vk_swapchain.extent.height 
     )
 
+    -- THE PIPELINE HANDOFF (Fixed the Compute Layout origin!)
     C_Bridge.set_pipeline_handles(
         ptr2str(Engine.vk_graphics.pipeline),
         ptr2str(Engine.vk_graphics.pipelineLayout),
         ptr2str(Engine.vk_compute.pipeline),
-        ptr2str(Engine.vk_compute.pipelineLayout),
+        ptr2str(Engine.vk_descriptors.pipelineLayout), -- <--- THIS WAS THE GHOST!
         ptr2str(Engine.vk_graphics.depthImage),
         ptr2str(Engine.vk_graphics.depthImageView),
         ptr2str(Engine.vk_descriptors.set0),
