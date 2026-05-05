@@ -1,25 +1,4 @@
 import xml.etree.ElementTree as ET
-
-TARGET_STRUCTS = {
-    "VkPhysicalDeviceDynamicRenderingFeatures",
-    "VkImageCreateInfo",
-    "VkMemoryAllocateInfo",
-    "VkPipelineShaderStageCreateInfo",
-    "VkVertexInputBindingDescription",
-    "VkVertexInputAttributeDescription",
-    "VkPipelineVertexInputStateCreateInfo",
-    "VkPipelineInputAssemblyStateCreateInfo",
-    "VkPipelineViewportStateCreateInfo",
-    "VkPipelineRasterizationStateCreateInfo",
-    "VkPipelineMultisampleStateCreateInfo",
-    "VkPipelineDepthStencilStateCreateInfo",
-    "VkPipelineColorBlendAttachmentState",
-    "VkPipelineColorBlendStateCreateInfo",
-    "VkPipelineDynamicStateCreateInfo",
-    "VkGraphicsPipelineCreateInfo",
-    "VkPipelineRenderingCreateInfo" # THE DYNAMIC RENDERING MAGIC!
-}
-
 TARGET_FUNCTIONS = {
     # Instance/Device/Queues
     "vkCreateInstance", "vkEnumeratePhysicalDevices", "vkCreateDevice", "vkDestroyInstance", "vkDestroyDevice",
@@ -58,6 +37,28 @@ TARGET_FUNCTIONS = {
     "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", "vkGetSwapchainImagesKHR", "vkCreateImageView",
     "vkDestroyImageView"
 }
+
+TARGET_STRUCTS = {
+    "VkPhysicalDeviceDynamicRenderingFeatures",
+    "VkImageCreateInfo",
+    "VkMemoryAllocateInfo",
+    "VkPipelineShaderStageCreateInfo",
+    "VkVertexInputBindingDescription",
+    "VkVertexInputAttributeDescription",
+    "VkPipelineVertexInputStateCreateInfo",
+    "VkPipelineInputAssemblyStateCreateInfo",
+    "VkPipelineViewportStateCreateInfo",
+    "VkPipelineRasterizationStateCreateInfo",
+    "VkPipelineMultisampleStateCreateInfo",
+    "VkPipelineDepthStencilStateCreateInfo",
+    "VkPipelineColorBlendAttachmentState",
+    "VkPipelineColorBlendStateCreateInfo",
+    "VkPipelineDynamicStateCreateInfo",
+    "VkGraphicsPipelineCreateInfo",
+    "VkPipelineRenderingCreateInfo",
+    "VkComputePipelineCreateInfo"
+}
+
 def generate_lua_ffi_cdef(xml_path):
     tree = ET.parse(xml_path)
     root = tree.getroot()

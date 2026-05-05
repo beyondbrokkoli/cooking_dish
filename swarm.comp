@@ -1,0 +1,70 @@
+#version 450
+
+// We process particles in batches of 256 threads
+layout(local_size_x = 256) in;
+
+struct Particle {
+    float x, y, z, pad;
+};
+
+// Binding 0: Reading from Swarm A (or B)
+layout(std140, binding = 0) readonly buffer InSwarm {
+    Particle inParticles[];
+};
+
+// Binding 1: Writing to Swarm B (or A)
+layout(std140, binding = 1) writeonly buffer OutSwarm {
+    Particle outParticles[];
+};
+
+// Push Constants
+layout(push_constant) uniform PushConstants {
+    float dt;
+    float time;
+    int state; // 0 = Idle/Solo, 1 = Network Handshake Active!
+} pc;
+
+float hash(uint n) {
+    return fract(sin(float(n) * 12.9898) * 43758.5453);
+}
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+
+    // Safety check: 2.5 million particles max
+    if (id >= 2500000) return;
+
+    Particle p = inParticles[id];
+    vec3 pos = vec3(p.x, p.y, p.z);
+
+    // --- BASE SWARM BEHAVIOR ---
+    float uniqueOffset = hash(id) * 6.28318; 
+    float speed = 0.5 + hash(id + 1337) * 1.5;
+
+    // Figure-8 Swoop
+    vec3 target = vec3(
+        sin(pc.time * speed + uniqueOffset) * 100.0,
+        cos(pc.time * speed * 0.8 + uniqueOffset) * 50.0,
+        sin(pc.time * speed * 1.2 + uniqueOffset) * 100.0
+    );
+
+    // --- OSI NETWORK VISUALIZATION ---
+    if (pc.state == 1) {
+        // Grab 10% of the swarm as "Data Packets"
+        if (id % 10 == 0) {
+            target = vec3(150.0, 50.0, 0.0);
+            float pulse = sin(pc.time * 5.0 - float(id)) * 20.0;
+            target.y += pulse;
+        }
+    }
+
+    // --- THE LERP ---
+    vec3 dir = target - pos;
+    pos += dir * pc.dt * 2.0;
+
+    // Write back
+    outParticles[id].x = pos.x;
+    outParticles[id].y = pos.y;
+    outParticles[id].z = pos.z;
+    outParticles[id].pad = p.pad;
+}

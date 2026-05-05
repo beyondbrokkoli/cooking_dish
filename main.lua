@@ -4,6 +4,7 @@ local memory = require("memory")
 local descriptors = require("descriptors")
 local swapchain = require("swapchain") -- ADD THIS
 local graphics_pipeline = require("graphics_pipeline")
+local compute_pipeline = require("compute_pipeline")
 
 -- Universal Vulkan Loader
 local success, vk = pcall(ffi.load, "vulkan-1")
@@ -43,6 +44,13 @@ function love_load()
     local ptrA    = tonumber(ffi.cast("uintptr_t", memory.Mapped["SwarmA"]))
     local ptrB    = tonumber(ffi.cast("uintptr_t", memory.Mapped["SwarmB"]))
     local ptrCage = tonumber(ffi.cast("uintptr_t", memory.Mapped["Cage"]))
+
+    -- 6. Build Compute Dependencies (THIS WAS MISSING!)
+    Engine.vk_compute = require("compute_pipeline").Init(
+        vk, 
+        Engine.vk_context.device, 
+        Engine.vk_descriptors.pipelineLayout
+    )
 
     -- 6. Hand off to C!
     C_Bridge.submit_buffers(bufA, bufB, bufCage, ptrA, ptrB, ptrCage)

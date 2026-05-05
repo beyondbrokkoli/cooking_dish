@@ -35,8 +35,12 @@ local function compile_engine(platform)
         -- LINUX BUILD PIPELINE
         -- ==========================================
         print("\n[1/3] Compiling SPIR-V Shaders...")
+        print("render")
         os.execute("glslc render.vert -o render_vert.spv")
+        print("frag")
         os.execute("glslc render.frag -o render_frag.spv")
+        print("comp")
+        os.execute("glslc swarm.comp -o swarm_comp.spv")
 
         print("\n[2/3] Compiling AVX2 Physics Backend (.so) ...")
         local linux_backend = "gcc -O3 -mavx -mavx2 -mfma -shared -fPIC vibemath.c -o libvibemath.so -lm -lpthread"
@@ -55,6 +59,7 @@ local function compile_engine(platform)
         local glslc = VULKAN_SDK_PATH .. "/Bin/glslc.exe"
         os.execute(glslc .. " render.vert -o render_vert.spv")
         os.execute(glslc .. " render.frag -o render_frag.spv")
+        os.execute("glslc swarm.comp -o swarm_comp.spv")
 
         print("\n[2/3] Compiling AVX2 Physics Backend (.dll) ...")
         local win_backend = "gcc -O3 -mavx -mavx2 -mfma -shared vibemath.c -o vibemath.dll"
