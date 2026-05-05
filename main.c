@@ -327,44 +327,41 @@ int main() {
     }
 
     printf("[BOOT] Entering Main Loop...\n");
-// ========================================================
-    // CREATE COMMAND POOL & SYNC OBJECTS (The Engine Block)
+printf("[BOOT] Entering Main Loop...\n");
+    fflush(stdout); // FORCE the terminal to print before anything else happens!
+
     // ========================================================
-    printf("[C DEBUG] 1. Creating Command Pool...\n");
-    VkCommandPoolCreateInfo poolInfo = {0};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    poolInfo.queueFamilyIndex = g_qIndex;
+    // THE NAKED DISPATCHER (Bypass the C Vulkan Loader)
+    // ========================================================
+    printf("[C DEBUG] 0. Extracting raw driver functions...\n"); fflush(stdout);
+    
+    #define LOAD_VK(func) PFN_##func pfn_##func = (PFN_##func)vkGetDeviceProcAddr(g_device, #func); \
+                          if (!pfn_##func) { printf("[FATAL] Missing %s\n", #func); fflush(stdout); return -1; }
 
-    VkCommandPool commandPool;
-    if (vkCreateCommandPool(g_device, &poolInfo, NULL, &commandPool) != VK_SUCCESS) {
-        printf("[FATAL] Failed to create command pool!\n"); return -1;
-    }
+    LOAD_VK(vkCreateCommandPool);
+    LOAD_VK(vkAllocateCommandBuffers);
+    LOAD_VK(vkCreateSemaphore);
+    LOAD_VK(vkCreateFence);
+    LOAD_VK(vkWaitForFences);
+    LOAD_VK(vkResetFences);
+    LOAD_VK(vkAcquireNextImageKHR);
+    LOAD_VK(vkResetCommandBuffer);
+    LOAD_VK(vkBeginCommandBuffer);
+    LOAD_VK(vkCmdBindPipeline);
+    LOAD_VK(vkCmdBindDescriptorSets);
+    LOAD_VK(vkCmdPushConstants);
+    LOAD_VK(vkCmdDispatch);
+    LOAD_VK(vkCmdPipelineBarrier);
+    LOAD_VK(vkCmdSetViewport);
+    LOAD_VK(vkCmdSetScissor);
+    LOAD_VK(vkCmdBindVertexBuffers);
+    LOAD_VK(vkCmdDraw);
+    LOAD_VK(vkEndCommandBuffer);
+    LOAD_VK(vkQueueSubmit);
+    LOAD_VK(vkQueuePresentKHR);
+    LOAD_VK(vkDeviceWaitIdle);
 
-    printf("[C DEBUG] 2. Allocating Command Buffers...\n");
-    VkCommandBufferAllocateInfo allocInfo = {0};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer cmd;
-    vkAllocateCommandBuffers(g_device, &allocInfo, &cmd);
-
-    printf("[C DEBUG] 3. Creating Sync Objects...\n");
-    VkSemaphore imageAvailableSemaphore, renderFinishedSemaphore;
-    VkFence inFlightFence;
-
-    VkSemaphoreCreateInfo semInfo = {0}; semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-    VkFenceCreateInfo fenceInfo = {0}; fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; 
-
-    vkCreateSemaphore(g_device, &semInfo, NULL, &imageAvailableSemaphore);
-    vkCreateSemaphore(g_device, &semInfo, NULL, &renderFinishedSemaphore);
-    vkCreateFence(g_device, &fenceInfo, NULL, &inFlightFence);
-
-    printf("[C DEBUG] 4. Loading Dynamic Rendering Extensions...\n");
-    // Fallback logic: Try Core Vulkan 1.3 first, then KHR extension!
+    // Dynamic Rendering Extensions (Check both Core 1.3 and KHR variants)
     PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRendering");
     if (!pfn_vkCmdBeginRendering) pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRenderingKHR");
 
@@ -372,14 +369,48 @@ int main() {
     if (!pfn_vkCmdEndRendering) pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRenderingKHR");
 
     if (!pfn_vkCmdBeginRendering || !pfn_vkCmdEndRendering) {
-        printf("[FATAL] Dynamic Rendering functions not found on device!\n");
+        printf("[FATAL] Dynamic Rendering functions not found on device!\n"); fflush(stdout);
         return -1;
     }
+
+    // ========================================================
+    // CREATE COMMAND POOL & SYNC OBJECTS 
+    // ========================================================
+    printf("[C DEBUG] 1. Creating Command Pool...\n"); fflush(stdout);
+    VkCommandPoolCreateInfo poolInfo = {0};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = g_qIndex;
+
+    VkCommandPool commandPool;
+    pfn_vkCreateCommandPool(g_device, &poolInfo, NULL, &commandPool);
+
+    printf("[C DEBUG] 2. Allocating Command Buffers...\n"); fflush(stdout);
+    VkCommandBufferAllocateInfo allocInfo = {0};
+    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocInfo.commandPool = commandPool;
+    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocInfo.commandBufferCount = 1;
+
+    VkCommandBuffer cmd;
+    pfn_vkAllocateCommandBuffers(g_device, &allocInfo, &cmd);
+
+    printf("[C DEBUG] 3. Creating Sync Objects...\n"); fflush(stdout);
+    VkSemaphore imageAvailableSemaphore, renderFinishedSemaphore;
+    VkFence inFlightFence;
+
+    VkSemaphoreCreateInfo semInfo = {0}; semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    VkFenceCreateInfo fenceInfo = {0}; fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; 
+
+    pfn_vkCreateSemaphore(g_device, &semInfo, NULL, &imageAvailableSemaphore);
+    pfn_vkCreateSemaphore(g_device, &semInfo, NULL, &renderFinishedSemaphore);
+    pfn_vkCreateFence(g_device, &fenceInfo, NULL, &inFlightFence);
 
     uint32_t frameIndex = 0;
     double startTime = glfwGetTime();
 
-    printf("[BOOT] Entering Main Loop...\n");
+    printf("[C DEBUG] 4. Launching the Render Loop!\n"); fflush(stdout);
 
     // ========================================================
     // THE RENDER LOOP (The Heartbeat)
@@ -391,7 +422,7 @@ int main() {
         lua_getglobal(L, "love_update");
         if (lua_isfunction(L, -1)) { 
             if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-                printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1));
+                printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1)); fflush(stdout);
                 break;
             }
         } else { lua_pop(L, 1); }
@@ -400,26 +431,24 @@ int main() {
         float dt = (float)(currentTime - startTime);
         startTime = currentTime;
 
-        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Waiting for Fences...\n");
-        vkWaitForFences(g_device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
-        vkResetFences(g_device, 1, &inFlightFence);
+        pfn_vkWaitForFences(g_device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
+        pfn_vkResetFences(g_device, 1, &inFlightFence);
 
         uint32_t imageIndex;
-        vkAcquireNextImageKHR(g_device, g_swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+        pfn_vkAcquireNextImageKHR(g_device, g_swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        vkResetCommandBuffer(cmd, 0);
+        pfn_vkResetCommandBuffer(cmd, 0);
         VkCommandBufferBeginInfo beginInfo = {0};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        vkBeginCommandBuffer(cmd, &beginInfo);
+        pfn_vkBeginCommandBuffer(cmd, &beginInfo);
 
         // ----------------------------------------------------
         // PASS A: COMPUTE SHADER 
         // ----------------------------------------------------
-        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Compute Pass...\n");
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compPipeline);
+        pfn_vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compPipeline);
 
         VkDescriptorSet currentSet = (frameIndex % 2 == 0) ? g_compSet0 : g_compSet1;
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compLayout, 0, 1, &currentSet, 0, NULL);
+        pfn_vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compLayout, 0, 1, &currentSet, 0, NULL);
 
         struct { float dt; float time; int state; } pc;
         pc.dt = dt;
@@ -430,26 +459,23 @@ int main() {
             lua_getfield(L, -1, "connected");
             pc.state = lua_toboolean(L, -1) ? 1 : 0;
             lua_pop(L, 1);
-        } else {
-            pc.state = 0;
-        }
+        } else { pc.state = 0; }
         lua_pop(L, 1);
 
-        vkCmdPushConstants(cmd, g_compLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
-        vkCmdDispatch(cmd, 9766, 1, 1);
+        pfn_vkCmdPushConstants(cmd, g_compLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
+        pfn_vkCmdDispatch(cmd, 9766, 1, 1);
 
         VkMemoryBarrier memBarrier = {0};
         memBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         memBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
         memBarrier.dstAccessMask = VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
         
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 
+        pfn_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_VERTEX_INPUT_BIT, 
                              0, 1, &memBarrier, 0, NULL, 0, NULL);
 
         // ----------------------------------------------------
         // PASS B: GRAPHICS SHADER 
         // ----------------------------------------------------
-        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Graphics Pass...\n");
         VkImageMemoryBarrier imgBarrier = {0};
         imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imgBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -463,7 +489,7 @@ int main() {
         imgBarrier.srcAccessMask = 0;
         imgBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        pfn_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                              0, 0, NULL, 0, NULL, 1, &imgBarrier);
 
         VkRenderingAttachmentInfoKHR colorAttachment = {0};
@@ -484,16 +510,16 @@ int main() {
         renderInfo.pColorAttachments = &colorAttachment;
 
         pfn_vkCmdBeginRendering(cmd, &renderInfo);
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, g_gfxPipeline);
+        pfn_vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, g_gfxPipeline);
 
         VkViewport viewport = {0.0f, 0.0f, (float)g_width, (float)g_height, 0.0f, 1.0f};
-        vkCmdSetViewport(cmd, 0, 1, &viewport);
+        pfn_vkCmdSetViewport(cmd, 0, 1, &viewport);
         VkRect2D scissor = {{0, 0}, {g_width, g_height}};
-        vkCmdSetScissor(cmd, 0, 1, &scissor);
+        pfn_vkCmdSetScissor(cmd, 0, 1, &scissor);
 
         VkBuffer vertexBuffer = (frameIndex % 2 == 0) ? g_buf_swarm_B : g_buf_swarm_A;
         VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, offsets);
+        pfn_vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, offsets);
 
         float viewProj[16] = {
             0.005f, 0,       0, 0,
@@ -501,9 +527,9 @@ int main() {
             0,       0,      1, 0,
             0,       0,      0, 1
         };
-        vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
+        pfn_vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
 
-        vkCmdDraw(cmd, 3, 2500000, 0, 0);
+        pfn_vkCmdDraw(cmd, 3, 2500000, 0, 0);
 
         pfn_vkCmdEndRendering(cmd);
 
@@ -512,12 +538,11 @@ int main() {
         imgBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
         imgBarrier.dstAccessMask = 0;
 
-        vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+        pfn_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
                              0, 0, NULL, 0, NULL, 1, &imgBarrier);
 
-        vkEndCommandBuffer(cmd);
+        pfn_vkEndCommandBuffer(cmd);
 
-        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Submitting & Presenting...\n");
         VkSubmitInfo submitInfo = {0};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
@@ -529,7 +554,7 @@ int main() {
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = &renderFinishedSemaphore;
 
-        vkQueueSubmit(g_queue, 1, &submitInfo, inFlightFence);
+        pfn_vkQueueSubmit(g_queue, 1, &submitInfo, inFlightFence);
 
         VkPresentInfoKHR presentInfo = {0};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -539,12 +564,12 @@ int main() {
         presentInfo.pSwapchains = &g_swapchain;
         presentInfo.pImageIndices = &imageIndex;
 
-        vkQueuePresentKHR(g_queue, &presentInfo);
+        pfn_vkQueuePresentKHR(g_queue, &presentInfo);
 
         frameIndex++;
     }
 
-    vkDeviceWaitIdle(g_device);
+    pfn_vkDeviceWaitIdle(g_device);
     glfwDestroyWindow(g_window);
     glfwTerminate();
     lua_close(L);
