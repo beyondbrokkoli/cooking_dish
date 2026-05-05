@@ -461,7 +461,7 @@ int main() {
                              0, 1, &memBarrier, 0, NULL, 0, NULL);
 
         // ----------------------------------------------------
-        // PASS B: GRAPHICS SHADER 
+        // PASS B: GRAPHICS SHADER (DYNAMIC RENDERING)
         // ----------------------------------------------------
         VkImageMemoryBarrier imgBarrier = {0};
         imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -476,9 +476,27 @@ int main() {
         imgBarrier.srcAccessMask = 0;
         imgBarrier.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        pfn_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                             0, 0, NULL, 0, NULL, 1, &imgBarrier);
+        // Transition the Depth Buffer too so AMD doesn't complain!
+        VkImageMemoryBarrier depthBarrier = {0};
+        depthBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        depthBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        depthBarrier.newLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        depthBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        depthBarrier.image = g_depthImage;
+        depthBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        depthBarrier.subresourceRange.levelCount = 1;
+        depthBarrier.subresourceRange.layerCount = 1;
+        depthBarrier.srcAccessMask = 0;
+        depthBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
+        VkImageMemoryBarrier barriers[] = {imgBarrier, depthBarrier};
+
+        pfn_vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                             0, 0, NULL, 0, NULL, 2, barriers);
+
+        // 1. Color Attachment
         VkRenderingAttachmentInfoKHR colorAttachment = {0};
         colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
         colorAttachment.imageView = g_swapchainViews[imageIndex];
@@ -488,6 +506,18 @@ int main() {
         VkClearValue clearColor = {{{0.01f, 0.01f, 0.02f, 1.0f}}};
         colorAttachment.clearValue = clearColor;
 
+        // 2. Depth Attachment (THE MISSING LINK)
+        VkRenderingAttachmentInfoKHR depthAttachment = {0};
+        depthAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
+        depthAttachment.imageView = g_depthView;
+        depthAttachment.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        depthAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        depthAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        VkClearValue depthClear = {0};
+        depthClear.depthStencil.depth = 0.0f; // Reverse-Z needs to clear to 0.0
+        depthAttachment.clearValue = depthClear;
+
+        // 3. Dynamic Render Info
         VkRenderingInfoKHR renderInfo = {0};
         renderInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO_KHR;
         renderInfo.renderArea.extent.width = g_width;
@@ -495,6 +525,7 @@ int main() {
         renderInfo.layerCount = 1;
         renderInfo.colorAttachmentCount = 1;
         renderInfo.pColorAttachments = &colorAttachment;
+        renderInfo.pDepthAttachment = &depthAttachment; // NOW IT IS PLUGGED IN!
 
         pfn_vkCmdBeginRendering(cmd, &renderInfo);
         pfn_vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, g_gfxPipeline);
@@ -508,11 +539,12 @@ int main() {
         VkDeviceSize offsets[] = {0};
         pfn_vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, offsets);
 
+        // 4. Properly Scaled Orthographic Matrix
         float viewProj[16] = {
-            0.005f, 0,       0, 0,
-            0,      -0.005f, 0, 0, 
-            0,       0,      1, 0,
-            0,       0,      0, 1
+            0.005f, 0.0f,    0.0f,    0.0f,
+            0.0f,  -0.005f,  0.0f,    0.0f,
+            0.0f,   0.0f,   -0.001f,  0.0f, // Scale Z down
+            0.0f,   0.0f,    0.5f,    1.0f  // Translate Z forward to sit perfectly in [0, 1] clip space
         };
         pfn_vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
 
