@@ -327,7 +327,7 @@ int main() {
     }
 
     printf("[BOOT] Entering Main Loop...\n");
-    // ========================================================
+// ========================================================
     // CREATE COMMAND POOL & SYNC OBJECTS (The Engine Block)
     // ========================================================
     VkCommandPoolCreateInfo poolInfo = {0};
@@ -353,13 +353,12 @@ int main() {
 
     VkSemaphoreCreateInfo semInfo = {0}; semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
     VkFenceCreateInfo fenceInfo = {0}; fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // Start signaled so the first frame doesn't freeze!
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; 
 
     vkCreateSemaphore(g_device, &semInfo, NULL, &imageAvailableSemaphore);
     vkCreateSemaphore(g_device, &semInfo, NULL, &renderFinishedSemaphore);
     vkCreateFence(g_device, &fenceInfo, NULL, &inFlightFence);
 
-    // Dynamically load the Vulkan 1.3 Dynamic Rendering extensions
     PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRenderingKHR");
     PFN_vkCmdEndRenderingKHR pfn_vkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRenderingKHR");
 
@@ -374,7 +373,7 @@ int main() {
     while (!glfwWindowShouldClose(g_window)) {
         glfwPollEvents();
 
-        // 1. Tick Lua Update (Network logic & state machine)
+        // 1. Tick Lua Update
         lua_getglobal(L, "love_update");
         if (lua_isfunction(L, -1)) { 
             if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
@@ -383,20 +382,16 @@ int main() {
             }
         } else { lua_pop(L, 1); }
 
-        // 2. Calculate Delta Time
         double currentTime = glfwGetTime();
         float dt = (float)(currentTime - startTime);
         startTime = currentTime;
 
-        // 3. Wait for the GPU to finish the last frame
         vkWaitForFences(g_device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
         vkResetFences(g_device, 1, &inFlightFence);
 
-        // 4. Acquire the next screen image
         uint32_t imageIndex;
         vkAcquireNextImageKHR(g_device, g_swapchain, UINT64_MAX, imageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
 
-        // 5. Begin Recording GPU Commands
         vkResetCommandBuffer(cmd, 0);
         VkCommandBufferBeginInfo beginInfo = {0};
         beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -407,16 +402,13 @@ int main() {
         // ----------------------------------------------------
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compPipeline);
 
-        // Ping-Pong the Sets! Frame 0 reads A writes B. Frame 1 reads B writes A.
         VkDescriptorSet currentSet = (frameIndex % 2 == 0) ? g_compSet0 : g_compSet1;
         vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compLayout, 0, 1, &currentSet, 0, NULL);
 
-        // Push Constants (Time & Network State)
         struct { float dt; float time; int state; } pc;
         pc.dt = dt;
         pc.time = (float)glfwGetTime();
         
-        // Sneakily check our Network Status from Lua
         lua_getglobal(L, "Engine");
         if (lua_istable(L, -1)) {
             lua_getfield(L, -1, "connected");
@@ -429,10 +421,8 @@ int main() {
 
         vkCmdPushConstants(cmd, g_compLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
 
-        // Dispatch 2.5 Million particles (2500000 particles / 256 threads per group = 9766 groups)
         vkCmdDispatch(cmd, 9766, 1, 1);
 
-        // MEMORY BARRIER: Tell the GPU "Do not start drawing until Compute is 100% finished!"
         VkMemoryBarrier memBarrier = {0};
         memBarrier.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER;
         memBarrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
@@ -444,7 +434,6 @@ int main() {
         // ----------------------------------------------------
         // PASS B: GRAPHICS SHADER (DYNAMIC RENDERING)
         // ----------------------------------------------------
-        // Transition Swapchain Image for Drawing
         VkImageMemoryBarrier imgBarrier = {0};
         imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imgBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -461,14 +450,13 @@ int main() {
         vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                              0, 0, NULL, 0, NULL, 1, &imgBarrier);
 
-        // Dynamic Rendering Attachments
         VkRenderingAttachmentInfoKHR colorAttachment = {0};
         colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO_KHR;
         colorAttachment.imageView = g_swapchainViews[imageIndex];
         colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        VkClearValue clearColor = {{{0.01f, 0.01f, 0.02f, 1.0f}}}; // Deep Space Blue
+        VkClearValue clearColor = {{{0.01f, 0.01f, 0.02f, 1.0f}}};
         colorAttachment.clearValue = clearColor;
 
         VkRenderingInfoKHR renderInfo = {0};
@@ -482,32 +470,28 @@ int main() {
         pfn_vkCmdBeginRenderingKHR(cmd, &renderInfo);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, g_gfxPipeline);
 
-        // Set Viewport & Scissor dynamically
         VkViewport viewport = {0.0f, 0.0f, (float)g_width, (float)g_height, 0.0f, 1.0f};
         vkCmdSetViewport(cmd, 0, 1, &viewport);
         VkRect2D scissor = {{0, 0}, {g_width, g_height}};
         vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-        // Bind Vertex Buffer (We draw from whatever buffer Compute just wrote to!)
         VkBuffer vertexBuffer = (frameIndex % 2 == 0) ? g_buf_swarm_B : g_buf_swarm_A;
         VkDeviceSize offsets[] = {0};
         vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, offsets);
 
-        // Push Camera Matrix (Hardcoded Ortho scaling for now)
         float viewProj[16] = {
             0.005f, 0,       0, 0,
-            0,      -0.005f, 0, 0, // THE Y-FLIP!
+            0,      -0.005f, 0, 0, 
             0,       0,      1, 0,
             0,       0,      0, 1
         };
         vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
 
-        // DRAW 2.5 MILLION PARTICLES! (3 vertices per hardcoded triangle)
+        // DRAW 2.5 MILLION PARTICLES!
         vkCmdDraw(cmd, 3, 2500000, 0, 0);
 
         pfn_vkCmdEndRenderingKHR(cmd);
 
-        // Transition image for Presentation to Screen
         imgBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         imgBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
         imgBarrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
@@ -518,7 +502,6 @@ int main() {
 
         vkEndCommandBuffer(cmd);
 
-        // 6. Submit the Command Buffer
         VkSubmitInfo submitInfo = {0};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
@@ -532,7 +515,6 @@ int main() {
 
         vkQueueSubmit(g_queue, 1, &submitInfo, inFlightFence);
 
-        // 7. Present!
         VkPresentInfoKHR presentInfo = {0};
         presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         presentInfo.waitSemaphoreCount = 1;
@@ -547,7 +529,6 @@ int main() {
     }
 
     vkDeviceWaitIdle(g_device);
-
     glfwDestroyWindow(g_window);
     glfwTerminate();
     lua_close(L);
