@@ -6,7 +6,27 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+// Add this global variable to keep the messenger alive
+VkDebugUtilsMessengerEXT g_debugMessenger = VK_NULL_HANDLE;
 
+// The Bouncer: Silences the ghost spam
+static VKAPI_ATTR VkBool32 VKAPI_CALL vulkan_debug_callback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+    void* pUserData) {
+
+    // Ignore INFO and VERBOSE spam
+    if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        return VK_FALSE;
+    }
+
+    printf("\n[VULKAN LAYER ENFORCER]\nSEVERITY: %d\nMESSAGE: %s\n\n",
+           messageSeverity, pCallbackData->pMessage);
+    fflush(stdout);
+
+    return VK_FALSE;
+}
 // ========================================================
 // 1. GLOBALS & STATE
 // ========================================================
@@ -109,7 +129,37 @@ void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
 // ========================================================
 // 3. LUA FFI BRIDGE FUNCTIONS
 // ========================================================
+// [BRIDGE] Debug Messenger Injection
+static int l_inject_validation_layers(lua_State* L) {
+    // 1. Catch the string from Lua and turn it back into a 64-bit pointer
+    VkInstance instance = (VkInstance)(uintptr_t)strtoull(lua_tostring(L, 1), NULL, 10);
+    
+    // 2. Configure the Bouncer
+    VkDebugUtilsMessengerCreateInfoEXT createInfo = {0};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    createInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | 
+                                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    createInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | 
+                             VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    createInfo.pfnUserCallback = vulkan_debug_callback;
+    createInfo.pUserData = NULL;
 
+    // 3. Load the extension function dynamically
+    PFN_vkCreateDebugUtilsMessengerEXT func = (PFN_vkCreateDebugUtilsMessengerEXT) 
+        vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    
+    // 4. Activate the Bouncer
+    if (func != NULL) {
+        func(instance, &createInfo, NULL, &g_debugMessenger);
+        printf("[BOOT] Validation Layer Enforcer injected successfully.\n");
+    } else {
+        printf("[BOOT] Failed to load vkCreateDebugUtilsMessengerEXT!\n");
+    }
+    
+    return 0;
+}
 // [BRIDGE] 1. Core State
 static int l_set_core_handles(lua_State* L) {
     g_device     = (VkDevice)(uintptr_t)strtoull(lua_tostring(L, 1), NULL, 10);
@@ -407,6 +457,8 @@ int main() {
     lua_pushcfunction(L, l_setRelativeMode);     lua_setfield(L, -2, "setRelativeMode");
 
     lua_pushcfunction(L, l_debug_particle); lua_setfield(L, -2, "debug_particle");
+
+    lua_pushcfunction(L, l_inject_validation_layers); lua_setfield(L, -2, "inject_validation_layers");
 
     // Expose all functions to Lua under the "C_Bridge" global table
     lua_setglobal(L, "C_Bridge");

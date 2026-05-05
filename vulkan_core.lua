@@ -29,30 +29,48 @@ function core.init()
     -- Cast the raw pointer to something the FFI understands
     local glfwExtensions = ffi.cast("const char* const*", exts_ptr)
 
+    -- [NEW] 1.5. Splice the arrays: GLFW Extensions + Debug Utils
+    local total_exts = exts_count + 1
+    local instanceExtensions = ffi.new("const char*[?]", total_exts)
+    
+    -- Copy GLFW extensions into our new array
+    for i = 0, exts_count - 1 do
+        instanceExtensions[i] = glfwExtensions[i]
+    end
+    -- Append the Debug Utils extension
+    instanceExtensions[exts_count] = "VK_EXT_debug_utils"
+
     -- 2. Build the Application Info
     local appInfo = ffi.new("VkApplicationInfo", {
         sType = 0, -- VK_STRUCTURE_TYPE_APPLICATION_INFO
         pApplicationName = "VibeEngine Cooking Dish",
         apiVersion = 4194304 -- VK_API_VERSION_1_0
     })
-    -- 2.5 Define the Validation Layers (Just like your old main.c!)
+    
+    -- 2.5 Define the Validation Layers
     local validationLayers = ffi.new("const char*[1]", {"VK_LAYER_KHRONOS_validation"})
 
     -- 3. Build the Instance Info
     local createInfo = ffi.new("VkInstanceCreateInfo", {
         sType = 1, -- VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO
         pApplicationInfo = appInfo,
-        enabledExtensionCount = exts_count,
-        ppEnabledExtensionNames = glfwExtensions,
-        enabledLayerCount = 0,
-        ppEnabledLayerNames = nil -- <--- NO MORE NULL POINTER!
+        enabledExtensionCount = total_exts,           -- [UPDATED] Use new count
+        ppEnabledExtensionNames = instanceExtensions, -- [UPDATED] Use merged array
+        enabledLayerCount = 1,                        -- [UPDATED] Enable the layer
+        ppEnabledLayerNames = validationLayers        -- [UPDATED] Pass the layer name
     })
+
     -- 4. Create the Instance
     local pInstance = ffi.new("VkInstance[1]")
     local res = vk.vkCreateInstance(createInfo, nil, pInstance)
     assert(res == 0, "FATAL: vkCreateInstance failed!")
     local instance = pInstance[0]
     print("[LUA] Vulkan Instance Created!")
+
+    -- [NEW] 4.5. Wire up the C-side Silencer
+    -- Convert the pointer to a string so our C bridge's strtoull can parse it
+    local instance_address_str = tostring(tonumber(ffi.cast("uintptr_t", instance)))
+    C_Bridge.inject_validation_layers(instance_address_str)
 
     -- 5. Ask C to create the Window Surface using our new Instance
     -- We cast the pointer to a raw number so C can read it safely without FFI metadata
@@ -70,6 +88,7 @@ function core.init()
 
     local physicalDevice = pDevices[0] -- Just grab the first GPU for now
     print("[LUA] Hardware GPU Selected!")
+    
     -- =========================================================
     -- 7. Find the Graphics/Compute Queue Family
     -- =========================================================
