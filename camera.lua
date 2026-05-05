@@ -51,7 +51,7 @@ local function build_matrix(state, width, height)
     local f = 1.0 / math_tan(math_rad(state.fov) * 0.5)
 
     local p00 = f / aspect
-    local p11 = f
+    local p11 = -f
 
     local radPitch = math_rad(state.pitch)
     local radYaw = math_rad(state.yaw)
