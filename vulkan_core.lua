@@ -44,8 +44,8 @@ function core.init()
         pApplicationInfo = appInfo,
         enabledExtensionCount = exts_count,
         ppEnabledExtensionNames = glfwExtensions,
-        enabledLayerCount = 1,
-        ppEnabledLayerNames = validationLayers -- <--- NO MORE NULL POINTER!
+        enabledLayerCount = 0,
+        ppEnabledLayerNames = nil -- <--- NO MORE NULL POINTER!
     })
     -- 4. Create the Instance
     local pInstance = ffi.new("VkInstance[1]")
