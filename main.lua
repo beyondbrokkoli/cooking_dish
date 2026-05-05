@@ -192,21 +192,37 @@ function love_update(dt)
     if debug_timer > 0.5 then
         -- 1. Where is the camera?
         print(string.format("[CAM] Pos: x=%.2f, y=%.2f, z=%.2f", cam_state.x, cam_state.y, cam_state.z))
-        
+
         -- 2. Where is Particle 0?
         local px, py, pz = C_Bridge.debug_particle(0)
         if px then
             print(string.format("[GPU MEM] Particle 0: x=%.2f, y=%.2f, z=%.2f", px, py, pz))
         end
-        
+
         debug_timer = 0
     end
-    -- Non-blocking poll!
-    local msg = C_Bridge.net_poll()
-    if msg then
-        print("[NET IN]: " .. msg)
-    end
+    -- Only poll the network if we aren't asleep
+    if Engine.net_mode ~= "Offline" then
+        local msg = C_Bridge.net_poll()
 
+        if msg then
+            -- 1. HOST BEHAVIOR: Catch the client's knock
+            if Engine.net_mode == "Host" and msg == "GLORIOUS_HANDSHAKE_REQUEST" then
+                print("\n[NET] Client knocked! Opening the door...")
+                C_Bridge.net_send("HANDSHAKE_ACCEPTED_WELCOME_TO_THE_SWARM")
+                Engine.connected = true
+
+            -- 2. CLIENT BEHAVIOR: Catch the host's welcome
+            elseif Engine.net_mode == "Client" and msg == "HANDSHAKE_ACCEPTED_WELCOME_TO_THE_SWARM" then
+                print("\n[NET] Host accepted! We are officially in the swarm.")
+                Engine.connected = true
+
+            -- 3. GENERAL BEHAVIOR: We are connected, process normal game data!
+            elseif Engine.connected then
+                print("[NET DATA]: " .. msg)
+            end
+        end
+    end
 end
 
 function love_mousemoved(x, y, dx, dy)
