@@ -200,15 +200,6 @@ function love_update(dt)
             cam_state.yaw, cam_state.pitch))
         debug_timer = 0
     end
-end
-function OLD_love_update(dt)
-    -- Pipe data to logic
-    camera_math.apply_movement(cam_state, dt)
-    camera_math.build_matrix(cam_state, Engine.vk_swapchain.extent.width, Engine.vk_swapchain.extent.height)
-
-    -- Pass the flat 16-float array across the C-Bridge
-    -- LuaJIT's `unpack` is heavily optimized, effectively zero-cost here.
-    C_Bridge.setCameraMatrix(unpack(cam_state.mat))
     -- Non-blocking poll!
     local msg = C_Bridge.net_poll()
     if msg then
@@ -216,6 +207,7 @@ function OLD_love_update(dt)
     end
 
 end
+
 function love_mousemoved(x, y, dx, dy)
     -- Pipe data to logic
     camera_math.apply_look(cam_state, dx, dy)
