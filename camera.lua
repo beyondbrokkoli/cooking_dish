@@ -16,7 +16,7 @@ end
 -- 2. THE INVERTED MOUSE FIX
 local function apply_look(state, dx, dy)
     state.yaw = state.yaw + (dx * state.sensitivity)
-    state.pitch = state.pitch - (dy * state.sensitivity) 
+    state.pitch = state.pitch + (dy * state.sensitivity) 
     
     if state.pitch > 89.0 then state.pitch = 89.0 end
     if state.pitch < -89.0 then state.pitch = -89.0 end
@@ -38,10 +38,10 @@ local function apply_movement(state, dt)
         state.x = state.x - fx * moveSpeed; state.z = state.z - fz * moveSpeed 
     end
     if love.keyboard.isDown("a") then 
-        state.x = state.x + rx * moveSpeed; state.z = state.z + rz * moveSpeed 
+        state.x = state.x - rx * moveSpeed; state.z = state.z - rz * moveSpeed 
     end
     if love.keyboard.isDown("d") then 
-        state.x = state.x - rx * moveSpeed; state.z = state.z - rz * moveSpeed 
+        state.x = state.x + rx * moveSpeed; state.z = state.z + rz * moveSpeed 
     end
 end
 
@@ -49,22 +49,23 @@ end
 local function build_matrix(state, width, height)
     local aspect = width / height
     local f = 1.0 / math_tan(math_rad(state.fov) * 0.5)
-    
+
     local p00 = f / aspect
-    local p11 = -f -- Flips Y to correctly match Vulkan's clip space
-    
+    local p11 = f
+
     local radPitch = math_rad(state.pitch)
     local radYaw = math_rad(state.yaw)
-    
+
     local cp, sp = math_cos(radPitch), math_sin(radPitch)
     local cy, sy = math_cos(radYaw), math_sin(radYaw)
-    
+
     -- Forward (Looking down -Z)
     local fx = cp * cy;  local fy = sp;  local fz = cp * sy
-    
-    -- Right (Cross Forward with World Up (0,1,0))
-    local rx = -sy;      local ry = 0.0; local rz = cy
-    
+
+    -- Right (Cross Forward with Vulkan World Up (0, -1, 0))
+    -- Note the signs are swapped from your current rx/rz!
+    local rx = sy;       local ry = 0.0; local rz = -cy
+
     -- Up (Cross Right with Forward) -> THIS WAS THE MATH BUG!
     local ux = ry*fz - rz*fy
     local uy = rz*fx - rx*fz
