@@ -52,6 +52,7 @@ function love_load()
 
     -- 7. THE BULLETPROOF HANDOFF (Pass pointers as Strings)
     C_Bridge.set_core_handles(
+        ptr2str(Engine.vk_context.instance), -- <--- ADD THIS LINE!
         ptr2str(Engine.vk_context.device),
         ptr2str(Engine.vk_context.queue),
         Engine.vk_context.qIndex, -- Safe as number
