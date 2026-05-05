@@ -6,6 +6,28 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+// ========================================================
+// CROSS-PLATFORM SOCKETS
+// ========================================================
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    typedef int socklen_t;
+#else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <unistd.h>
+    #include <fcntl.h>
+    #define SOCKET int
+    #define INVALID_SOCKET -1
+    #define SOCKET_ERROR -1
+    #define closesocket close
+#endif
+
+SOCKET g_udp_socket = INVALID_SOCKET;
+struct sockaddr_in g_peer_addr = {0}; // Who we are talking to
+
 GLFWwindow* g_window = NULL;
 
 // GLOBAL VULKAN RESOURCES (Populated by Lua)
@@ -76,6 +98,91 @@ static int l_set_fullscreen(lua_State* L) {
     }
     return 0;
 }
+// [BRIDGE] Host a UDP Server
+static int l_net_host(lua_State* L) {
+    int port = luaL_checkinteger(L, 1);
+
+#ifdef _WIN32
+    WSADATA wsa; WSAStartup(MAKEWORD(2,2), &wsa);
+#endif
+
+    g_udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    
+    // Make it NON-BLOCKING (Crucial so our game loop doesn't freeze!)
+#ifdef _WIN32
+    u_long mode = 1; ioctlsocket(g_udp_socket, FIONBIO, &mode);
+#else
+    fcntl(g_udp_socket, F_SETFL, O_NONBLOCK);
+#endif
+
+    struct sockaddr_in server_addr = {0};
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+
+    if (bind(g_udp_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) == SOCKET_ERROR) {
+        printf("[NETWORK] Failed to bind to port %d\n", port);
+        lua_pushboolean(L, 0);
+        return 1;
+    }
+
+    printf("[NETWORK] Hosting UDP on port %d\n", port);
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+// [BRIDGE] Join a UDP Server
+static int l_net_join(lua_State* L) {
+    const char* ip = luaL_checkstring(L, 1);
+    int port = luaL_checkinteger(L, 2);
+
+#ifdef _WIN32
+    WSADATA wsa; WSAStartup(MAKEWORD(2,2), &wsa);
+#endif
+
+    g_udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    
+    // Make it NON-BLOCKING
+#ifdef _WIN32
+    u_long mode = 1; ioctlsocket(g_udp_socket, FIONBIO, &mode);
+#else
+    fcntl(g_udp_socket, F_SETFL, O_NONBLOCK);
+#endif
+
+    g_peer_addr.sin_family = AF_INET;
+    g_peer_addr.sin_port = htons(port);
+    g_peer_addr.sin_addr.s_addr = inet_addr(ip);
+
+    printf("[NETWORK] Ready to blast UDP to %s:%d\n", ip, port);
+    lua_pushboolean(L, 1);
+    return 1;
+}
+
+// [BRIDGE] Non-blocking read
+static int l_net_poll(lua_State* L) {
+    if (g_udp_socket == INVALID_SOCKET) { lua_pushnil(L); return 1; }
+
+    char buffer[1024];
+    struct sockaddr_in sender;
+    socklen_t sender_len = sizeof(sender);
+
+    int bytes = recvfrom(g_udp_socket, buffer, sizeof(buffer) - 1, 0, (struct sockaddr*)&sender, &sender_len);
+    
+    if (bytes > 0) {
+        buffer[bytes] = '\0'; // Null-terminate the string
+        lua_pushstring(L, buffer);
+        
+        // If we are the server, save who just talked to us so we can reply!
+        if (g_peer_addr.sin_port == 0) {
+            g_peer_addr = sender; 
+        }
+        return 1;
+    }
+    
+    lua_pushnil(L); // No messages waiting
+    return 1;
+}
+
 // Bridge 5: Hand off the constructed memory buffers to the C loop
 static int l_submit_buffers(lua_State* L) {
     // 1. Read the VkBuffer handles
@@ -109,6 +216,9 @@ int main() {
     lua_pushcfunction(L, l_get_window_size); lua_setfield(L, -2, "getWindowSize");
     lua_pushcfunction(L, l_set_fullscreen); lua_setfield(L, -2, "setFullscreen");
     lua_pushcfunction(L, l_submit_buffers);      lua_setfield(L, -2, "submit_buffers");
+    lua_pushcfunction(L, l_net_host); lua_setfield(L, -2, "net_host");
+    lua_pushcfunction(L, l_net_join); lua_setfield(L, -2, "net_join");
+    lua_pushcfunction(L, l_net_poll); lua_setfield(L, -2, "net_poll");
 
     lua_setglobal(L, "C_Bridge");
 
