@@ -21,13 +21,13 @@ ffi.cdef[[
     } GPU_VertexAoS;
 ]]
 
--- The ReBAR logic we translated earlier
 local function FindSmartBufferMemory(physicalDevice, typeFilter)
     local memProperties = ffi.new("VkPhysicalDeviceMemoryProperties")
     vk.vkGetPhysicalDeviceMemoryProperties(physicalDevice, memProperties)
 
-    -- VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT (10) | HOST_COHERENT_BIT (2) | DEVICE_LOCAL_BIT (1)
-    local rebarFlags = bit.bor(10, 2, 1) 
+    -- The REAL Magic Numbers:
+    -- DEVICE_LOCAL (1) | HOST_VISIBLE (2) | HOST_COHERENT (4)
+    local rebarFlags = bit.bor(1, 2, 4)
     for i = 0, memProperties.memoryTypeCount - 1 do
         local isTypeSupported = bit.band(typeFilter, bit.lshift(1, i)) ~= 0
         local hasProperties = bit.band(memProperties.memoryTypes[i].propertyFlags, rebarFlags) == rebarFlags
@@ -37,7 +37,8 @@ local function FindSmartBufferMemory(physicalDevice, typeFilter)
         end
     end
 
-    local stdFlags = bit.bor(10, 2)
+    -- Fallback: HOST_VISIBLE (2) | HOST_COHERENT (4)
+    local stdFlags = bit.bor(2, 4)
     for i = 0, memProperties.memoryTypeCount - 1 do
         local isTypeSupported = bit.band(typeFilter, bit.lshift(1, i)) ~= 0
         local hasProperties = bit.band(memProperties.memoryTypes[i].propertyFlags, stdFlags) == stdFlags
