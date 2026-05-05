@@ -231,28 +231,35 @@ def generate_lua_ffi_cdef(xml_path):
     return ffi_declarations
 
 if __name__ == "__main__":
-    # --- LUA MODULE HEADER ---
-    print("local ffi = require('ffi')")
-    print("ffi.cdef[[")
+    output_filename = "vulkan_header.lua"
+    
+    with open(output_filename, "w") as f:
+        # --- LUA MODULE HEADER ---
+        f.write("local ffi = require('ffi')\n")
+        f.write("ffi.cdef[[\n")
 
-    # Base types needed to keep LuaJIT happy
-    print("// --- Base Types ---")
-    # print("typedef uint32_t VkFlags;")
-    # print("typedef uint64_t VkFlags64;")  # <--- ADD THIS LINE
-    # print("typedef uint64_t VkDeviceSize;")
-    # print("typedef uint32_t VkBool32;")
-    # print("typedef uint64_t VkDeviceAddress;")
-    print("typedef void* PFN_vkVoidFunction;")
-    print("typedef void* PFN_vkAllocationFunction;")
-    print("typedef void* PFN_vkReallocationFunction;")
-    print("typedef void* PFN_vkFreeFunction;")
-    print("typedef void* PFN_vkInternalAllocationNotification;")
-    print("typedef void* PFN_vkInternalFreeNotification;\n")
+        # Base types needed to keep LuaJIT happy
+        f.write("// --- Base Types ---\n")
+        # f.write("typedef uint32_t VkFlags;\n")
+        # f.write("typedef uint64_t VkFlags64;\n")
+        # f.write("typedef uint64_t VkDeviceSize;\n")
+        # f.write("typedef uint32_t VkBool32;\n")
+        # f.write("typedef uint64_t VkDeviceAddress;\n")
+        
+        f.write("typedef void* PFN_vkVoidFunction;\n")
+        f.write("typedef void* PFN_vkAllocationFunction;\n")
+        f.write("typedef void* PFN_vkReallocationFunction;\n")
+        f.write("typedef void* PFN_vkFreeFunction;\n")
+        f.write("typedef void* PFN_vkInternalAllocationNotification;\n")
+        f.write("typedef void* PFN_vkInternalFreeNotification;\n\n")
 
-    declarations = generate_lua_ffi_cdef("vk.xml")
-    for decl in declarations:
-        print(decl)
+        # Generate and write the parsed declarations
+        declarations = generate_lua_ffi_cdef("vk.xml")
+        for decl in declarations:
+            f.write(decl + "\n")
 
-    # --- LUA MODULE FOOTER ---
-    print("]]")
-    print("return true")
+        # --- LUA MODULE FOOTER ---
+        f.write("]]\n")
+        f.write("return true\n")
+        
+    print(f"[PARSE] Successfully generated {output_filename}!")

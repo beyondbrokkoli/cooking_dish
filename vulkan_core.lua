@@ -1,6 +1,6 @@
 local ffi = require("ffi")
 local bit = require("bit")
-require("generated_cdef") -- The Python script handles everything now!
+require("vulkan_header") -- The Python script handles everything now!
 
 local vk
 -- 1. Try Windows/Wine standard (vulkan-1.dll)
