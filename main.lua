@@ -15,7 +15,32 @@ local success, vk = pcall(ffi.load, "vulkan-1")
 if not success then success, vk = pcall(ffi.load, "vulkan") end
 
 Engine = {}
-
+-- ========================================================
+-- LOVE2D API MOCKING (So camera.lua works unmodified!)
+-- ========================================================
+love = {
+    keyboard = {
+        isDown = function(key)
+            if key == "w" then return Engine.isKeyDown(87) end
+            if key == "a" then return Engine.isKeyDown(65) end
+            if key == "s" then return Engine.isKeyDown(83) end
+            if key == "d" then return Engine.isKeyDown(68) end
+            if key == "q" then return Engine.isKeyDown(81) end
+            if key == "e" then return Engine.isKeyDown(69) end
+            if key == "space" then return Engine.isKeyDown(32) end
+            if key == "left" then return Engine.isKeyDown(263) end
+            if key == "right" then return Engine.isKeyDown(262) end
+            if key == "up" then return Engine.isKeyDown(265) end
+            if key == "down" then return Engine.isKeyDown(264) end
+            return false
+        end
+    },
+    mouse = {
+        getRelativeMode = function() return true end,
+        -- [THE FIX] Bind to our new GLFW bridge!
+        isDown = function(button) return Engine.isMouseDown(button) end
+    }
+}
 function love_load()
     print("[LUA] love_load executing...")
     
