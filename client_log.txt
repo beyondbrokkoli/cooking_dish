@@ -1,25 +1,4 @@
 AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
-$ lua build_orchestrator.lua win
-========================================
-   VIBE ENGINE BUILD ORCHESTRATOR
-   Target Platform: WIN
-========================================
-
-[1/3] Compiling SPIR-V Shaders...
-
-[2/3] Compiling AVX2 Physics Backend (.dll) ...
-
-[3/3] Compiling Vulkan Host (.exe) ...
-
-[4/4] Packing Windows Dependencies (DLLs)...
-  |- DLLs copied successfully.
-
-[SUCCESS] Engine build complete!
-
-
---- AI SNAPSHOT ---
-
-AzureAD+HalimOmarZaghdoudi@DESKTOP-BD3FFTI MINGW64 ~/cooking_dish
 $ ./swarm_gpu.exe
 [BOOT] Starting Naked Bootloader...
 [LUA] love_load executing...
@@ -28,15 +7,15 @@ $ ./swarm_gpu.exe
 [LUA] Window Surface Linked!
 [LUA] Hardware GPU Selected!
 [LUA] Logical Device Created!
-[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x01f2758e8308
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02084970ff88
 [MEMORY] Initializing GPU Buffer Manager...
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f2758e8308
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02084970ff88
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f2758e8308
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02084970ff88
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
-[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f2758e8308
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02084970ff88
 [MEMORY] ReBAR Supported! Streaming directly to VRAM.
 [MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
 [DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
@@ -55,10 +34,10 @@ $ ./swarm_gpu.exe
 Do you want to host? [Press ENTER]
 Is someone online? Type 'J' to Join 127.0.0.1
 Any other key = Single Player
->
-[NETWORK] Hosting UDP on port 25000
-[NET] Hosting! Waiting for connections...
+> j
+[NETWORK] Ready to blast UDP to 127.0.0.1:25000
+[NET] Handshake fired! Waiting for reply...
 =============================================
 
 [BOOT] Entering Main Loop...
-[NET IN]: GLORIOUS_HANDSHAKE_REQUEST
+
