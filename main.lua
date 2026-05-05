@@ -21,24 +21,24 @@ Engine = {}
 love = {
     keyboard = {
         isDown = function(key)
-            if key == "w" then return Engine.isKeyDown(87) end
-            if key == "a" then return Engine.isKeyDown(65) end
-            if key == "s" then return Engine.isKeyDown(83) end
-            if key == "d" then return Engine.isKeyDown(68) end
-            if key == "q" then return Engine.isKeyDown(81) end
-            if key == "e" then return Engine.isKeyDown(69) end
-            if key == "space" then return Engine.isKeyDown(32) end
-            if key == "left" then return Engine.isKeyDown(263) end
-            if key == "right" then return Engine.isKeyDown(262) end
-            if key == "up" then return Engine.isKeyDown(265) end
-            if key == "down" then return Engine.isKeyDown(264) end
+            if key == "w" then return C_Bridge.isKeyDown(87) end
+            if key == "a" then return C_Bridge.isKeyDown(65) end
+            if key == "s" then return C_Bridge.isKeyDown(83) end
+            if key == "d" then return C_Bridge.isKeyDown(68) end
+            if key == "q" then return C_Bridge.isKeyDown(81) end
+            if key == "e" then return C_Bridge.isKeyDown(69) end
+            if key == "space" then return C_Bridge.isKeyDown(32) end
+            if key == "left" then return C_Bridge.isKeyDown(263) end
+            if key == "right" then return C_Bridge.isKeyDown(262) end
+            if key == "up" then return C_Bridge.isKeyDown(265) end
+            if key == "down" then return C_Bridge.isKeyDown(264) end
             return false
         end
     },
     mouse = {
         getRelativeMode = function() return true end,
         -- [THE FIX] Bind to our new GLFW bridge!
-        isDown = function(button) return Engine.isMouseDown(button) end
+        isDown = function(button) return C_Bridge.isMouseDown(button) end
     }
 }
 function love_load()
@@ -188,7 +188,7 @@ function love_update(dt)
 
     -- Pass the flat 16-float array across the C-Bridge
     -- LuaJIT's `unpack` is heavily optimized, effectively zero-cost here.
-    Engine.setCameraMatrix(unpack(cam_state.mat))
+    C_Bridge.setCameraMatrix(unpack(cam_state.mat))
     -- Non-blocking poll!
     local msg = C_Bridge.net_poll()
     if msg then
