@@ -40,26 +40,18 @@ function love_load()
     local function ptr2str(ptr)
         if ptr == nil then return "0" end
         local cdata_num = ffi.cast("uint64_t", ffi.cast("uintptr_t", ptr))
-        -- tostring() yields "12345ULL", string.match extracts ONLY the digits!
         return string.match(tostring(cdata_num), "%d+")
     end
-    -- 6. Build Compute Dependencies
-    Engine.vk_compute = compute_pipeline.Init(
-        vk,
-        Engine.vk_context.device,
-        Engine.vk_descriptors.pipelineLayout
-    )
 
-    -- 7. THE BULLETPROOF HANDOFF (Pass pointers as Strings)
+    -- 7. THE CORE HANDOFF (7 Arguments exactly)
     C_Bridge.set_core_handles(
-        ptr2str(Engine.vk_context.instance), -- <--- ADD THIS LINE!
         ptr2str(Engine.vk_context.device),
         ptr2str(Engine.vk_context.queue),
-        Engine.vk_context.qIndex, -- Safe as number
+        Engine.vk_context.qIndex, 
         ptr2str(Engine.vk_swapchain.handle),
-        Engine.vk_swapchain.imageCount, -- Safe
-        Engine.vk_swapchain.extent.width, -- Safe
-        Engine.vk_swapchain.extent.height -- Safe
+        Engine.vk_swapchain.imageCount, 
+        Engine.vk_swapchain.extent.width, 
+        Engine.vk_swapchain.extent.height 
     )
 
     C_Bridge.set_pipeline_handles(
@@ -74,14 +66,10 @@ function love_load()
     )
 
     for i = 0, Engine.vk_swapchain.imageCount - 1 do
-        C_Bridge.set_swapchain_asset(
-            i, 
-            ptr2str(Engine.vk_swapchain.images[i]),
-            ptr2str(Engine.vk_swapchain.imageViews[i])
-        )
+        C_Bridge.set_swapchain_asset(i, ptr2str(Engine.vk_swapchain.images[i]), ptr2str(Engine.vk_swapchain.imageViews[i]))
     end
 
-    -- 8. Hand off the Buffers via Strings
+    -- 8. BUFFER HANDOFF
     C_Bridge.submit_buffers(
         ptr2str(memory.Buffers["SwarmA"]),
         ptr2str(memory.Buffers["SwarmB"]),

@@ -45,17 +45,15 @@ void* g_mapped_cage;
 // ========================================================
 // [BRIDGE] 1. Core State
 static int l_set_core_handles(lua_State* L) {
-    g_instance   = (VkInstance)strtoull(lua_tostring(L, 1), NULL, 10); // Catch Instance!
-    g_device     = (VkDevice)strtoull(lua_tostring(L, 2), NULL, 10);
-    g_queue      = (VkQueue)strtoull(lua_tostring(L, 3), NULL, 10);
-    g_qIndex     = (uint32_t)lua_tointeger(L, 4);
-    g_swapchain  = (VkSwapchainKHR)strtoull(lua_tostring(L, 5), NULL, 10);
-    g_imageCount = (uint32_t)lua_tointeger(L, 6);
-    g_width      = (uint32_t)lua_tointeger(L, 7);
-    g_height     = (uint32_t)lua_tointeger(L, 8);
-
-    printf("[C BRIDGE] Rebuilt VkInstance: %p\n", (void*)g_instance);
-    printf("[C BRIDGE] Rebuilt VkDevice: %p\n", (void*)g_device);
+    g_device     = (VkDevice)(uintptr_t)strtoull(lua_tostring(L, 1), NULL, 10);
+    g_queue      = (VkQueue)(uintptr_t)strtoull(lua_tostring(L, 2), NULL, 10);
+    g_qIndex     = (uint32_t)lua_tointeger(L, 3);
+    g_swapchain  = (VkSwapchainKHR)(uintptr_t)strtoull(lua_tostring(L, 4), NULL, 10);
+    g_imageCount = (uint32_t)lua_tointeger(L, 5);
+    g_width      = (uint32_t)lua_tointeger(L, 6);
+    g_height     = (uint32_t)lua_tointeger(L, 7);
+    
+    printf("[C BRIDGE] Rebuilt VkDevice: %p\n", (void*)g_device); fflush(stdout);
     return 0;
 }
 // [BRIDGE] 2. Pipeline State
@@ -325,19 +323,16 @@ int main() {
         lua_pop(L, 1);
     }
 
-printf("[BOOT] Entering Main Loop...\n");
-    fflush(stdout);
+    printf("[BOOT] Entering Main Loop...\n");
+    fflush(stdout); // FORCE the terminal to print before the kernel can kill us!
 
     // ========================================================
-    // THE NAKED DISPATCHER (Bypass C-Loader via GLFW)
+    // THE NAKED DISPATCHER
     // ========================================================
-    PFN_vkGetDeviceProcAddr getDevProcAddr = (PFN_vkGetDeviceProcAddr)glfwGetInstanceProcAddress(g_instance, "vkGetDeviceProcAddr");
-    if (!getDevProcAddr) {
-        printf("[FATAL] GLFW could not find vkGetDeviceProcAddr!\n"); return -1;
-    }
-
-    #define LOAD_VK(func) PFN_##func pfn_##func = (PFN_##func)getDevProcAddr(g_device, #func); \
-                          if (!pfn_##func) { printf("[FATAL] Missing %s\n", #func); return -1; }
+    printf("[C DEBUG] 0. Extracting raw AMD driver functions...\n"); fflush(stdout);
+    
+    #define LOAD_VK(func) PFN_##func pfn_##func = (PFN_##func)vkGetDeviceProcAddr(g_device, #func); \
+                          if (!pfn_##func) { printf("[FATAL] Missing %s\n", #func); fflush(stdout); return -1; }
 
     LOAD_VK(vkCreateCommandPool);
     LOAD_VK(vkAllocateCommandBuffers);
@@ -362,15 +357,21 @@ printf("[BOOT] Entering Main Loop...\n");
     LOAD_VK(vkQueuePresentKHR);
     LOAD_VK(vkDeviceWaitIdle);
 
-    PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)getDevProcAddr(g_device, "vkCmdBeginRendering");
-    if (!pfn_vkCmdBeginRendering) pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)getDevProcAddr(g_device, "vkCmdBeginRenderingKHR");
+    PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRendering");
+    if (!pfn_vkCmdBeginRendering) pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRenderingKHR");
 
-    PFN_vkCmdEndRenderingKHR pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)getDevProcAddr(g_device, "vkCmdEndRendering");
-    if (!pfn_vkCmdEndRendering) pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)getDevProcAddr(g_device, "vkCmdEndRenderingKHR");
+    PFN_vkCmdEndRenderingKHR pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRendering");
+    if (!pfn_vkCmdEndRendering) pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRenderingKHR");
+
+    if (!pfn_vkCmdBeginRendering || !pfn_vkCmdEndRendering) {
+        printf("[FATAL] Dynamic Rendering functions not found on device!\n"); fflush(stdout);
+        return -1;
+    }
 
     // ========================================================
     // CREATE COMMAND POOL & SYNC OBJECTS 
     // ========================================================
+    printf("[C DEBUG] 1. Creating Command Pool...\n"); fflush(stdout);
     VkCommandPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -379,6 +380,7 @@ printf("[BOOT] Entering Main Loop...\n");
     VkCommandPool commandPool;
     pfn_vkCreateCommandPool(g_device, &poolInfo, NULL, &commandPool);
 
+    printf("[C DEBUG] 2. Allocating Command Buffers...\n"); fflush(stdout);
     VkCommandBufferAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
@@ -388,6 +390,7 @@ printf("[BOOT] Entering Main Loop...\n");
     VkCommandBuffer cmd;
     pfn_vkAllocateCommandBuffers(g_device, &allocInfo, &cmd);
 
+    printf("[C DEBUG] 3. Creating Sync Objects...\n"); fflush(stdout);
     VkSemaphore imageAvailableSemaphore, renderFinishedSemaphore;
     VkFence inFlightFence;
 
@@ -402,6 +405,8 @@ printf("[BOOT] Entering Main Loop...\n");
     uint32_t frameIndex = 0;
     double startTime = glfwGetTime();
 
+    printf("[C DEBUG] 4. Launching the Render Loop!\n"); fflush(stdout);
+
     // ========================================================
     // THE RENDER LOOP (The Heartbeat)
     // ========================================================
@@ -411,7 +416,7 @@ printf("[BOOT] Entering Main Loop...\n");
         lua_getglobal(L, "love_update");
         if (lua_isfunction(L, -1)) { 
             if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-                printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1));
+                printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1)); fflush(stdout);
                 break;
             }
         } else { lua_pop(L, 1); }
@@ -442,14 +447,7 @@ printf("[BOOT] Entering Main Loop...\n");
         struct { float dt; float time; int state; } pc;
         pc.dt = dt;
         pc.time = (float)glfwGetTime();
-        
-        lua_getglobal(L, "Engine");
-        if (lua_istable(L, -1)) {
-            lua_getfield(L, -1, "connected");
-            pc.state = lua_toboolean(L, -1) ? 1 : 0;
-            lua_pop(L, 1);
-        } else { pc.state = 0; }
-        lua_pop(L, 1);
+        pc.state = 0;
 
         pfn_vkCmdPushConstants(cmd, g_compLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
         pfn_vkCmdDispatch(cmd, 9766, 1, 1);
