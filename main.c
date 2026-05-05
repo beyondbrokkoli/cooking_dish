@@ -654,14 +654,15 @@ int main() {
         VkDeviceSize offsets[] = {0};
         pfn_vkCmdBindVertexBuffers(cmd, 0, 1, &vertexBuffer, offsets);
 
-        // 4. Properly Scaled Orthographic Matrix
-        float viewProj[16] = {
-            0.005f, 0.0f,    0.0f,    0.0f,
-            0.0f,  -0.005f,  0.0f,    0.0f,
-            0.0f,   0.0f,   -0.001f,  0.0f, // Scale Z down
-            0.0f,   0.0f,    0.5f,    1.0f  // Translate Z forward to sit perfectly in [0, 1] clip space
-        };
-        pfn_vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
+        // 4. Push the LIVE Camera Matrix from Lua
+        pfn_vkCmdPushConstants(
+            cmd,
+            g_gfxLayout,
+            VK_SHADER_STAGE_VERTEX_BIT,
+            0,
+            sizeof(CameraPushConstants), // 64 bytes
+            &g_cam_pc                    // The struct updated by the FFI bridge!
+        );
 
         pfn_vkCmdDraw(cmd, 3, 2500000, 0, 0);
 
