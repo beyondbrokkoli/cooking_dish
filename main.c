@@ -490,20 +490,30 @@ int main() {
     // ========================================================
     // THE RENDER LOOP (The Heartbeat)
     // ========================================================
+    // Initialize timing variables BEFORE the loop
+    double last_time = glfwGetTime();
     while (!glfwWindowShouldClose(g_window)) {
         glfwPollEvents();
 
-        lua_getglobal(L, "love_update");
-        if (lua_isfunction(L, -1)) { 
-            if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
-                printf("[LUA FATAL ERROR]: %s\n", lua_tostring(L, -1)); fflush(stdout);
-                break;
-            }
-        } else { lua_pop(L, 1); }
+        // 1. Calculate Delta Time (dt)
+        double current_time = glfwGetTime();
+        double dt = current_time - last_time;
+        last_time = current_time;
 
-        double currentTime = glfwGetTime();
-        float dt = (float)(currentTime - startTime);
-        startTime = currentTime;
+        // 2. Call love_update(dt) in Lua
+        lua_getglobal(L, "love_update");
+        if (lua_isfunction(L, -1)) {
+            lua_pushnumber(L, dt); // PUSH THE DT ARGUMENT HERE!
+
+            // lua_pcall(state, arguments_count, return_count, error_handler)
+            if (lua_pcall(L, 1, 0, 0) != LUA_OK) {
+                printf("[LUA FATAL ERROR in love_update]: %s\n", lua_tostring(L, -1));
+                break; // Or handle gracefully
+            }
+        } else {
+            lua_pop(L, 1); // Not a function, pop it
+        }
+
 
         pfn_vkWaitForFences(g_device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
         pfn_vkResetFences(g_device, 1, &inFlightFence);
