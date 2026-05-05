@@ -15,7 +15,7 @@ end
 
 -- 2. THE INVERTED MOUSE FIX
 local function apply_look(state, dx, dy)
-    state.yaw = state.yaw + (dx * state.sensitivity)
+    state.yaw = state.yaw - (dx * state.sensitivity)
     state.pitch = state.pitch + (dy * state.sensitivity) 
     
     if state.pitch > 89.0 then state.pitch = 89.0 end
