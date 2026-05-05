@@ -198,7 +198,9 @@ function GraphicsPipeline.Init(vk, core_state, width, height)
     rasterizer.sType = 23
     rasterizer.polygonMode = 0 -- VK_POLYGON_MODE_FILL
     rasterizer.lineWidth = 1.0
-    rasterizer.cullMode = 2 -- VK_CULL_MODE_BACK_BIT
+    //rasterizer.cullMode = 2 -- VK_CULL_MODE_BACK_BIT
+    -- CHANGE THIS LINE FROM 2 (BACK_BIT) to 0 (NONE)
+    rasterizer.cullMode = 0
     rasterizer.frontFace = 0 -- VK_FRONT_FACE_COUNTER_CLOCKWISE
 
     local multisampling = ffi.new("VkPipelineMultisampleStateCreateInfo")
