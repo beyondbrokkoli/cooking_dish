@@ -195,9 +195,15 @@ function love_update(dt)
     -- Spam the console twice a second to verify the math
     debug_timer = debug_timer + dt
     if debug_timer > 0.5 then
-        print(string.format("[CAM] Pos: x=%.2f, y=%.2f, z=%.2f | Yaw: %.2f, Pitch: %.2f", 
-            cam_state.x, cam_state.y, cam_state.z, 
-            cam_state.yaw, cam_state.pitch))
+        -- 1. Where is the camera?
+        print(string.format("[CAM] Pos: x=%.2f, y=%.2f, z=%.2f", cam_state.x, cam_state.y, cam_state.z))
+        
+        -- 2. Where is Particle 0?
+        local px, py, pz = C_Bridge.debug_particle(0)
+        if px then
+            print(string.format("[GPU MEM] Particle 0: x=%.2f, y=%.2f, z=%.2f", px, py, pz))
+        end
+        
         debug_timer = 0
     end
     -- Non-blocking poll!

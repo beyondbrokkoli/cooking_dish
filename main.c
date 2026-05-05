@@ -338,6 +338,29 @@ static int l_net_send(lua_State* L) {
     
     return 0;
 }
+// [BRIDGE] Read a particle's exact location from GPU Memory
+static int l_debug_particle(lua_State* L) {
+    int index = luaL_checkinteger(L, 1);
+    
+    // Safety check: Make sure memory is mapped
+    if (!g_mapped_swarm_B) {
+        lua_pushnil(L);
+        return 1; 
+    }
+
+    // Cast the raw mapped pointer to an array of floats
+    // swarm_B is the OUTPUT of frame 0, so it holds the latest data
+    float* swarm = (float*)g_mapped_swarm_B; 
+    
+    // Each particle is 4 floats (x, y, z, padding)
+    int offset = index * 4; 
+    
+    lua_pushnumber(L, swarm[offset + 0]); // X
+    lua_pushnumber(L, swarm[offset + 1]); // Y
+    lua_pushnumber(L, swarm[offset + 2]); // Z
+    
+    return 3; // Return x, y, z to Lua
+}
 // ========================================================
 // 4. MAIN ENTRY POINT
 // ========================================================
@@ -382,6 +405,8 @@ int main() {
     lua_pushcfunction(L, l_isKeyDown);           lua_setfield(L, -2, "isKeyDown");
     lua_pushcfunction(L, l_isMouseDown);         lua_setfield(L, -2, "isMouseDown");
     lua_pushcfunction(L, l_setRelativeMode);     lua_setfield(L, -2, "setRelativeMode");
+
+    lua_pushcfunction(L, l_debug_particle); lua_setfield(L, -2, "debug_particle");
 
     // Expose all functions to Lua under the "C_Bridge" global table
     lua_setglobal(L, "C_Bridge");
