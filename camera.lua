@@ -17,7 +17,7 @@ end
 local function apply_look(state, dx, dy)
     state.yaw = state.yaw + (dx * state.sensitivity)
     -- Flipped the minus to a plus to un-invert the Y axis!
-    state.pitch = state.pitch + (dy * state.sensitivity) 
+    state.pitch = state.pitch - (dy * state.sensitivity) 
     
     if state.pitch > 89.0 then state.pitch = 89.0 end
     if state.pitch < -89.0 then state.pitch = -89.0 end

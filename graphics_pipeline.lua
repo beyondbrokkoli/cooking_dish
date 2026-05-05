@@ -169,11 +169,29 @@ function GraphicsPipeline.Init(vk, core_state, width, height)
     inputAssembly.sType = 20
     inputAssembly.topology = 3 -- VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST
 
+    -- 1. Bake the Viewport dimensions natively
+    local pViewports = ffi.new("VkViewport[1]")
+    pViewports[0].x = 0.0
+    pViewports[0].y = 0.0
+    pViewports[0].width = width
+    pViewports[0].height = height
+    pViewports[0].minDepth = 0.0
+    pViewports[0].maxDepth = 1.0
+
+    -- 2. Bake the Scissor rectangle natively
+    local pScissors = ffi.new("VkRect2D[1]")
+    pScissors[0].offset.x = 0
+    pScissors[0].offset.y = 0
+    pScissors[0].extent.width = width
+    pScissors[0].extent.height = height
+
     local viewportState = ffi.new("VkPipelineViewportStateCreateInfo")
     ffi.fill(viewportState, ffi.sizeof(viewportState))
     viewportState.sType = 22
     viewportState.viewportCount = 1
+    viewportState.pViewports = pViewports
     viewportState.scissorCount = 1
+    viewportState.pScissors = pScissors
 
     local rasterizer = ffi.new("VkPipelineRasterizationStateCreateInfo")
     ffi.fill(rasterizer, ffi.sizeof(rasterizer))
@@ -211,13 +229,6 @@ function GraphicsPipeline.Init(vk, core_state, width, height)
     colorBlending.sType = 26
     colorBlending.attachmentCount = 1
     colorBlending.pAttachments = colorBlendAttachment
-
-    local dynamicStates = ffi.new("int32_t[2]", {0, 1}) -- VIEWPORT, SCISSOR
-    local dynamicStateInfo = ffi.new("VkPipelineDynamicStateCreateInfo")
-    ffi.fill(dynamicStateInfo, ffi.sizeof(dynamicStateInfo))
-    dynamicStateInfo.sType = 27
-    dynamicStateInfo.dynamicStateCount = 2
-    dynamicStateInfo.pDynamicStates = dynamicStates
 
     -- ========================================================
     -- 8. PIPELINE LAYOUT & PUSH CONSTANTS (The Bridge)
@@ -262,7 +273,7 @@ function GraphicsPipeline.Init(vk, core_state, width, height)
     pipelineInfo[0].pMultisampleState = multisampling
     pipelineInfo[0].pDepthStencilState = depthStencil
     pipelineInfo[0].pColorBlendState = colorBlending
-    pipelineInfo[0].pDynamicState = dynamicStateInfo
+    pipelineInfo[0].pDynamicState = nil
     pipelineInfo[0].layout = pPipelineLayout[0]
 
     local pPipeline = ffi.new("VkPipeline[1]")
