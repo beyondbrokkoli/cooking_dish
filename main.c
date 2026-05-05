@@ -330,14 +330,18 @@ int main() {
 // ========================================================
     // CREATE COMMAND POOL & SYNC OBJECTS (The Engine Block)
     // ========================================================
+    printf("[C DEBUG] 1. Creating Command Pool...\n");
     VkCommandPoolCreateInfo poolInfo = {0};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = g_qIndex;
 
     VkCommandPool commandPool;
-    vkCreateCommandPool(g_device, &poolInfo, NULL, &commandPool);
+    if (vkCreateCommandPool(g_device, &poolInfo, NULL, &commandPool) != VK_SUCCESS) {
+        printf("[FATAL] Failed to create command pool!\n"); return -1;
+    }
 
+    printf("[C DEBUG] 2. Allocating Command Buffers...\n");
     VkCommandBufferAllocateInfo allocInfo = {0};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
@@ -347,7 +351,7 @@ int main() {
     VkCommandBuffer cmd;
     vkAllocateCommandBuffers(g_device, &allocInfo, &cmd);
 
-    // Semaphores & Fences prevent CPU/GPU race conditions
+    printf("[C DEBUG] 3. Creating Sync Objects...\n");
     VkSemaphore imageAvailableSemaphore, renderFinishedSemaphore;
     VkFence inFlightFence;
 
@@ -359,8 +363,18 @@ int main() {
     vkCreateSemaphore(g_device, &semInfo, NULL, &renderFinishedSemaphore);
     vkCreateFence(g_device, &fenceInfo, NULL, &inFlightFence);
 
-    PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRenderingKHR = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRenderingKHR");
-    PFN_vkCmdEndRenderingKHR pfn_vkCmdEndRenderingKHR = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRenderingKHR");
+    printf("[C DEBUG] 4. Loading Dynamic Rendering Extensions...\n");
+    // Fallback logic: Try Core Vulkan 1.3 first, then KHR extension!
+    PFN_vkCmdBeginRenderingKHR pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRendering");
+    if (!pfn_vkCmdBeginRendering) pfn_vkCmdBeginRendering = (PFN_vkCmdBeginRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdBeginRenderingKHR");
+
+    PFN_vkCmdEndRenderingKHR pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRendering");
+    if (!pfn_vkCmdEndRendering) pfn_vkCmdEndRendering = (PFN_vkCmdEndRenderingKHR)vkGetDeviceProcAddr(g_device, "vkCmdEndRenderingKHR");
+
+    if (!pfn_vkCmdBeginRendering || !pfn_vkCmdEndRendering) {
+        printf("[FATAL] Dynamic Rendering functions not found on device!\n");
+        return -1;
+    }
 
     uint32_t frameIndex = 0;
     double startTime = glfwGetTime();
@@ -386,6 +400,7 @@ int main() {
         float dt = (float)(currentTime - startTime);
         startTime = currentTime;
 
+        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Waiting for Fences...\n");
         vkWaitForFences(g_device, 1, &inFlightFence, VK_TRUE, UINT64_MAX);
         vkResetFences(g_device, 1, &inFlightFence);
 
@@ -398,8 +413,9 @@ int main() {
         vkBeginCommandBuffer(cmd, &beginInfo);
 
         // ----------------------------------------------------
-        // PASS A: COMPUTE SHADER (MOVE 2.5 MILLION PARTICLES)
+        // PASS A: COMPUTE SHADER 
         // ----------------------------------------------------
+        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Compute Pass...\n");
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, g_compPipeline);
 
         VkDescriptorSet currentSet = (frameIndex % 2 == 0) ? g_compSet0 : g_compSet1;
@@ -420,7 +436,6 @@ int main() {
         lua_pop(L, 1);
 
         vkCmdPushConstants(cmd, g_compLayout, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(pc), &pc);
-
         vkCmdDispatch(cmd, 9766, 1, 1);
 
         VkMemoryBarrier memBarrier = {0};
@@ -432,8 +447,9 @@ int main() {
                              0, 1, &memBarrier, 0, NULL, 0, NULL);
 
         // ----------------------------------------------------
-        // PASS B: GRAPHICS SHADER (DYNAMIC RENDERING)
+        // PASS B: GRAPHICS SHADER 
         // ----------------------------------------------------
+        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Graphics Pass...\n");
         VkImageMemoryBarrier imgBarrier = {0};
         imgBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         imgBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -467,7 +483,7 @@ int main() {
         renderInfo.colorAttachmentCount = 1;
         renderInfo.pColorAttachments = &colorAttachment;
 
-        pfn_vkCmdBeginRenderingKHR(cmd, &renderInfo);
+        pfn_vkCmdBeginRendering(cmd, &renderInfo);
         vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, g_gfxPipeline);
 
         VkViewport viewport = {0.0f, 0.0f, (float)g_width, (float)g_height, 0.0f, 1.0f};
@@ -487,10 +503,9 @@ int main() {
         };
         vkCmdPushConstants(cmd, g_gfxLayout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(float)*16, viewProj);
 
-        // DRAW 2.5 MILLION PARTICLES!
         vkCmdDraw(cmd, 3, 2500000, 0, 0);
 
-        pfn_vkCmdEndRenderingKHR(cmd);
+        pfn_vkCmdEndRendering(cmd);
 
         imgBarrier.oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         imgBarrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
@@ -502,6 +517,7 @@ int main() {
 
         vkEndCommandBuffer(cmd);
 
+        if (frameIndex == 0) printf("[C DEBUG] Frame 0: Submitting & Presenting...\n");
         VkSubmitInfo submitInfo = {0};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.waitSemaphoreCount = 1;
