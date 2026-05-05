@@ -48,6 +48,44 @@ function love_load()
     C_Bridge.submit_buffers(bufA, bufB, bufCage, ptrA, ptrB, ptrCage)
 
     print("[LUA] Engine Boot Sequence Complete.")
+
+    -- ========================================================
+    -- 7. THE DUMB & EFFICIENT NETWORK BOOTSTRAP
+    -- ========================================================
+    print("\n=============================================")
+    print(" 📡 VIBE ENGINE NETWORK BOOTSTRAP 📡 ")
+    print("=============================================")
+    print("Do you want to host? [Press ENTER]")
+    print("Is someone online? Type 'J' to Join 127.0.0.1")
+    print("Any other key = Single Player")
+    io.write("> ")
+    
+    local choice = io.read("*l") -- Blocks the terminal until the user hits Enter
+    
+    Engine.net_mode = "Offline"
+
+    if choice == "" then
+        C_Bridge.net_host(25000)
+        Engine.net_mode = "Host"
+        print("[NET] Hosting! Waiting for connections...")
+        
+    elseif choice:lower() == "j" then
+        C_Bridge.net_join("127.0.0.1", 25000)
+        Engine.net_mode = "Client"
+        -- Fire the glorious handshake into the void!
+        C_Bridge.net_send("GLORIOUS_HANDSHAKE_REQUEST")
+        print("[NET] Handshake fired! Waiting for reply...")
+        
+    else
+        print("[NET] Sleeping.")
+    end
+    print("=============================================\n")
+
+
+
+
+
+
 end
 -- Host a server:
 -- C_Bridge.net_host(25000)

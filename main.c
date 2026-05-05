@@ -182,7 +182,15 @@ static int l_net_poll(lua_State* L) {
     lua_pushnil(L); // No messages waiting
     return 1;
 }
-
+// [BRIDGE] Send a string over UDP
+static int l_net_send(lua_State* L) {
+    if (g_udp_socket == INVALID_SOCKET || g_peer_addr.sin_port == 0) return 0;
+    
+    const char* msg = luaL_checkstring(L, 1);
+    sendto(g_udp_socket, msg, strlen(msg), 0, (struct sockaddr*)&g_peer_addr, sizeof(g_peer_addr));
+    
+    return 0;
+}
 // Bridge 5: Hand off the constructed memory buffers to the C loop
 static int l_submit_buffers(lua_State* L) {
     // 1. Read the VkBuffer handles
@@ -219,6 +227,7 @@ int main() {
     lua_pushcfunction(L, l_net_host); lua_setfield(L, -2, "net_host");
     lua_pushcfunction(L, l_net_join); lua_setfield(L, -2, "net_join");
     lua_pushcfunction(L, l_net_poll); lua_setfield(L, -2, "net_poll");
+    lua_pushcfunction(L, l_net_send); lua_setfield(L, -2, "net_send");
 
     lua_setglobal(L, "C_Bridge");
 
