@@ -5,6 +5,10 @@ local descriptors = require("descriptors")
 local swapchain = require("swapchain") -- ADD THIS
 local graphics_pipeline = require("graphics_pipeline")
 local compute_pipeline = require("compute_pipeline")
+local camera_math = require("camera")
+
+-- 1. Allocate the data payload once
+local cam_state = camera_math.create_state()
 
 -- Universal Vulkan Loader
 local success, vk = pcall(ffi.load, "vulkan-1")
@@ -153,9 +157,21 @@ end
 -- C_Bridge.net_join("127.0.0.1", 25000)
 
 function love_update()
+    -- Pipe data to logic
+    camera_math.apply_movement(cam_state, dt)
+    camera_math.build_matrix(cam_state, Engine.vk_swapchain.extent.width, Engine.vk_swapchain.extent.height)
+
+    -- Pass the flat 16-float array across the C-Bridge
+    -- LuaJIT's `unpack` is heavily optimized, effectively zero-cost here.
+    Engine.setCameraMatrix(unpack(cam_state.mat))
     -- Non-blocking poll!
     local msg = C_Bridge.net_poll()
     if msg then
         print("[NET IN]: " .. msg)
     end
+
+end
+function love_mousemoved(x, y, dx, dy)
+    -- Pipe data to logic
+    camera_math.apply_look(cam_state, dx, dy)
 end

@@ -277,7 +277,70 @@ static int l_net_send(lua_State* L) {
     
     return 0;
 }
+// ========================================================
+// INPUT STATE & CALLBACKS
+// ========================================================
+static double g_last_mouse_x = 0.0;
+static double g_last_mouse_y = 0.0;
+static int g_first_mouse = 1;
 
+// Make sure your lua_State* is globally accessible, e.g., 'g_L'
+extern lua_State* g_L; 
+extern GLFWwindow* g_window;
+
+void cursor_position_callback(GLFWwindow* window, double xpos, double ypos) {
+    if (g_first_mouse) { 
+        g_last_mouse_x = xpos; 
+        g_last_mouse_y = ypos; 
+        g_first_mouse = 0; 
+    }
+    
+    double dx = xpos - g_last_mouse_x;
+    double dy = ypos - g_last_mouse_y;
+    g_last_mouse_x = xpos; 
+    g_last_mouse_y = ypos;
+
+    // Fire the event into Lua
+    lua_getglobal(g_L, "love_mousemoved");
+    if (lua_isfunction(g_L, -1)) {
+        lua_pushnumber(g_L, xpos);
+        lua_pushnumber(g_L, ypos);
+        lua_pushnumber(g_L, dx);
+        lua_pushnumber(g_L, dy);
+        if (lua_pcall(g_L, 4, 0, 0) != LUA_OK) {
+            printf("[LUA ERROR in mousemoved] %s\n", lua_tostring(g_L, -1));
+            lua_pop(g_L, 1);
+        }
+    } else {
+        lua_pop(g_L, 1); // Not a function, pop it off the stack
+    }
+}
+// ========================================================
+// LUA FFI BRIDGE: INPUT
+// ========================================================
+
+// Maps to Engine.isKeyDown(key_code)
+static int l_isKeyDown(lua_State* L) { 
+    int key = luaL_checkinteger(L, 1); 
+    lua_pushboolean(L, glfwGetKey(g_window, key) == GLFW_PRESS); 
+    return 1; 
+}
+
+// Maps to Engine.isMouseDown(button)
+static int l_isMouseDown(lua_State* L) {
+    int button = luaL_checkinteger(L, 1);
+    // Love2D uses 1 for Left. GLFW uses 0 for Left. Map the index.
+    int state = glfwGetMouseButton(g_window, button - 1);
+    lua_pushboolean(L, state == GLFW_PRESS);
+    return 1;
+}
+
+// Maps to Engine.setRelativeMode(bool) - Crucial for FPS camera!
+static int l_setRelativeMode(lua_State* L) { 
+    int enable = lua_toboolean(L, 1);
+    glfwSetInputMode(g_window, GLFW_CURSOR, enable ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL); 
+    return 0; 
+}
 int main() {
     printf("[BOOT] Starting Naked Bootloader...\n");
 
@@ -303,6 +366,15 @@ int main() {
     lua_pushcfunction(L, l_set_core_handles); lua_setfield(L, -2, "set_core_handles");
     lua_pushcfunction(L, l_set_pipeline_handles); lua_setfield(L, -2, "set_pipeline_handles");
     lua_pushcfunction(L, l_set_swapchain_asset); lua_setfield(L, -2, "set_swapchain_asset");
+    // Register Camera Matrix bridge (from earlier)
+    lua_pushcfunction(g_L, l_setCameraMatrix);
+    lua_setfield(g_L, -2, "setCameraMatrix");
+
+    // Register Input bridges
+    lua_pushcfunction(g_L, l_isKeyDown); lua_setfield(g_L, -2, "isKeyDown");
+
+    lua_pushcfunction(g_L, l_isMouseDown); lua_setfield(g_L, -2, "isMouseDown");
+    lua_pushcfunction(g_L, l_setRelativeMode); lua_setfield(g_L, -2, "setRelativeMode");
 
     lua_setglobal(L, "C_Bridge");
 
