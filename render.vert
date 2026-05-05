@@ -1,61 +1,69 @@
-#version 450
+#version 460
 
-// --------------------------------------------------------
-// INPUTS
-// --------------------------------------------------------
-// This exactly matches your attrDesc format: VK_FORMAT_R32G32B32A32_SFLOAT
-// The GPU reads one of these PER INSTANCE (particle) from the Swarm Buffer.
-layout(location = 0) in vec4 inPosition; 
+layout(location = 0) in vec4 inPosition; // Swarm Particle Center (x, y, z, padding)
 
-// The Push Constant (64 bytes: 4x4 Matrix)
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform CameraInfo {
     mat4 viewProj;
 } pc;
 
-// --------------------------------------------------------
-// OUTPUTS
-// --------------------------------------------------------
-// Passing a color to the Fragment Shader
 layout(location = 0) out vec3 fragColor;
 
-// --------------------------------------------------------
-// HARDCODED GEOMETRY
-// --------------------------------------------------------
-// A simple triangle facing the camera. 
-// (Since we set VK_FRONT_FACE_COUNTER_CLOCKWISE, we wind these CCW)
-const vec3 positions[3] = vec3[](
-    vec3( 0.0,  0.5, 0.0), // Top
-    vec3(-0.5, -0.5, 0.0), // Bottom Left
-    vec3( 0.5, -0.5, 0.0)  // Bottom Right
+// 1. Define the 4 corners of the Tetrahedron
+const float size = 0.5; // How big the particles are
+const vec3 corners[4] = vec3[](
+    vec3(0.0, size, 0.0),      // 0: Top
+    vec3(-size, -size, size),  // 1: Bottom Left Front
+    vec3(size, -size, size),   // 2: Bottom Right Front
+    vec3(0.0, -size, -size)    // 3: Bottom Back
 );
 
-// A color palette for the corners
-const vec3 colors[3] = vec3[](
-    vec3(1.0, 0.2, 0.5), // Pinkish Red
+// 2. The Index Map: 12 vertices to make 4 triangles
+const int lut[12] = int[](
+    0, 1, 2, // Face 0 (Front)
+    0, 2, 3, // Face 1 (Right)
+    0, 3, 1, // Face 2 (Left)
+    1, 3, 2  // Face 3 (Bottom)
+);
+
+// 3. Hardcoded Face Normals (For fake lighting!)
+// Pre-calculated orthogonal vectors pointing OUT of each of the 4 faces
+const vec3 normals[4] = vec3[](
+    normalize(cross(corners[1] - corners[0], corners[2] - corners[0])),
+    normalize(cross(corners[2] - corners[0], corners[3] - corners[0])),
+    normalize(cross(corners[3] - corners[0], corners[1] - corners[0])),
+    normalize(cross(corners[3] - corners[1], corners[2] - corners[1]))
+);
+
+// Base colors based on particle ID
+const vec3 baseColors[3] = vec3[](
     vec3(0.2, 1.0, 0.5), // Mint Green
-    vec3(0.2, 0.5, 1.0)  // Ocean Blue
+    vec3(0.2, 0.5, 1.0), // Ocean Blue
+    vec3(1.0, 0.2, 0.5)  // Pinkish Red
 );
 
 void main() {
-    // 1. Grab the local vertex for this specific corner of the triangle (0, 1, or 2)
-    vec3 localPos = positions[gl_VertexIndex % 3];
-    
-    // Scale the particle down (so they aren't massive on screen)
-    localPos *= 0.2; 
+    // Determine which corner (0-3) and which face (0-3) we are drawing
+    int cornerIndex = lut[gl_VertexIndex % 12];
+    int faceIndex = (gl_VertexIndex % 12) / 3;
 
-    // 2. Add the Swarm particle's world position!
-    vec3 worldPos = localPos + inPosition.xyz;
+    // Grab local offset and face normal
+    vec3 localPos = corners[cornerIndex];
+    vec3 faceNormal = normals[faceIndex];
 
-    // 3. Project it through the Camera Matrix
+    // Project to screen
+    vec3 worldPos = inPosition.xyz + localPos;
     gl_Position = pc.viewProj * vec4(worldPos, 1.0);
 
-    // 4. Send some beautiful colors to the Fragment Shader
-    // We mix the corner color with a pseudo-random color based on the particle's ID
-    vec3 instanceColor = vec3(
-        fract(sin(gl_InstanceIndex * 12.9898) * 43758.5453),
-        fract(sin(gl_InstanceIndex * 78.2330) * 43758.5453),
-        fract(sin(gl_InstanceIndex * 45.1640) * 43758.5453)
-    );
+    // --- FAKE LIGHTING ---
+    vec3 lightDir = normalize(vec3(0.5, 1.0, -0.8)); // Sun shining from top-right-front
     
-    fragColor = mix(colors[gl_VertexIndex % 3], instanceColor, 0.5);
+    // N dot L (How directly is the light hitting this face?)
+    // Max(0) prevents negative light on the dark side
+    float diffuse = max(dot(faceNormal, lightDir), 0.2); // 0.2 is ambient ambient shadow
+
+    // Pick a pseudo-random color based on the Particle ID (gl_InstanceIndex)
+    vec3 rawColor = baseColors[gl_InstanceIndex % 3];
+
+    // Multiply the color by the lighting!
+    fragColor = rawColor * diffuse;
 }

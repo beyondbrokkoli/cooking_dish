@@ -664,7 +664,8 @@ int main() {
             &g_cam_pc                    // The struct updated by the FFI bridge!
         );
 
-        pfn_vkCmdDraw(cmd, 3, 2500000, 0, 0);
+        // Draw 12 vertices per instance, for 2.5 million instances!
+        pfn_vkCmdDraw(cmd, 12, 2500000, 0, 0);
 
         pfn_vkCmdEndRendering(cmd);
 
