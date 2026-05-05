@@ -45,16 +45,20 @@ void* g_mapped_cage;
 // [BRIDGE] 1. Core State
 // [BRIDGE] 1. Core State
 static int l_set_core_handles(lua_State* L) {
-    g_device     = (VkDevice)strtoull(lua_tostring(L, 1), NULL, 10);
+    const char* dev_str = lua_tostring(L, 1);
+    g_device     = (VkDevice)strtoull(dev_str, NULL, 10);
     g_queue      = (VkQueue)strtoull(lua_tostring(L, 2), NULL, 10);
-    g_qIndex     = (uint32_t)lua_tointeger(L, 3); // qIndex is small, integer is safe!
+    g_qIndex     = (uint32_t)lua_tointeger(L, 3);
     g_swapchain  = (VkSwapchainKHR)strtoull(lua_tostring(L, 4), NULL, 10);
     g_imageCount = (uint32_t)lua_tointeger(L, 5);
     g_width      = (uint32_t)lua_tointeger(L, 6);
     g_height     = (uint32_t)lua_tointeger(L, 7);
+    
+    printf("[C BRIDGE] Parsed Device String: '%s'\n", dev_str);
+    printf("[C BRIDGE] Rebuilt VkDevice Pointer: %p\n", (void*)g_device);
+    
     return 0;
 }
-
 // [BRIDGE] 2. Pipeline State
 static int l_set_pipeline_handles(lua_State* L) {
     g_gfxPipeline  = (VkPipeline)strtoull(lua_tostring(L, 1), NULL, 10);

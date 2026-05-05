@@ -36,21 +36,61 @@ function love_load()
     -- 5. Build Graphics Dependencies (Depth + Shaders)
     Engine.vk_graphics = graphics_pipeline.Init(vk, Engine.vk_context, win_width, win_height)
 
-    -- 5. Extract the handles and cast them to raw numbers
-    local bufA    = tonumber(ffi.cast("uintptr_t", memory.Buffers["SwarmA"]))
-    local bufB    = tonumber(ffi.cast("uintptr_t", memory.Buffers["SwarmB"]))
-    local bufCage = tonumber(ffi.cast("uintptr_t", memory.Buffers["Cage"]))
-
-    local ptrA    = tonumber(ffi.cast("uintptr_t", memory.Mapped["SwarmA"]))
-    local ptrB    = tonumber(ffi.cast("uintptr_t", memory.Mapped["SwarmB"]))
-    local ptrCage = tonumber(ffi.cast("uintptr_t", memory.Mapped["Cage"]))
-
-    -- 6. Build Compute Dependencies (THIS WAS MISSING!)
-    Engine.vk_compute = require("compute_pipeline").Init(
-        vk, 
-        Engine.vk_context.device, 
+    -- The TRULY BULLETPROOF 64-bit String Converter
+    local function ptr2str(ptr)
+        if ptr == nil then return "0" end
+        local cdata_num = ffi.cast("uint64_t", ffi.cast("uintptr_t", ptr))
+        -- tostring() yields "12345ULL", string.match extracts ONLY the digits!
+        return string.match(tostring(cdata_num), "%d+")
+    end
+    -- 6. Build Compute Dependencies
+    Engine.vk_compute = compute_pipeline.Init(
+        vk,
+        Engine.vk_context.device,
         Engine.vk_descriptors.pipelineLayout
     )
+
+    -- 7. THE BULLETPROOF HANDOFF (Pass pointers as Strings)
+    C_Bridge.set_core_handles(
+        ptr2str(Engine.vk_context.device),
+        ptr2str(Engine.vk_context.queue),
+        Engine.vk_context.qIndex, -- Safe as number
+        ptr2str(Engine.vk_swapchain.handle),
+        Engine.vk_swapchain.imageCount, -- Safe
+        Engine.vk_swapchain.extent.width, -- Safe
+        Engine.vk_swapchain.extent.height -- Safe
+    )
+
+    C_Bridge.set_pipeline_handles(
+        ptr2str(Engine.vk_graphics.pipeline),
+        ptr2str(Engine.vk_graphics.pipelineLayout),
+        ptr2str(Engine.vk_compute.pipeline),
+        ptr2str(Engine.vk_compute.pipelineLayout),
+        ptr2str(Engine.vk_graphics.depthImage),
+        ptr2str(Engine.vk_graphics.depthImageView),
+        ptr2str(Engine.vk_descriptors.set0),
+        ptr2str(Engine.vk_descriptors.set1)
+    )
+
+    for i = 0, Engine.vk_swapchain.imageCount - 1 do
+        C_Bridge.set_swapchain_asset(
+            i, 
+            ptr2str(Engine.vk_swapchain.images[i]),
+            ptr2str(Engine.vk_swapchain.imageViews[i])
+        )
+    end
+
+    -- 8. Hand off the Buffers via Strings
+    C_Bridge.submit_buffers(
+        ptr2str(memory.Buffers["SwarmA"]),
+        ptr2str(memory.Buffers["SwarmB"]),
+        ptr2str(memory.Buffers["Cage"]),
+        ptr2str(memory.Mapped["SwarmA"]),
+        ptr2str(memory.Mapped["SwarmB"]),
+        ptr2str(memory.Mapped["Cage"])
+    )
+
+    print("[LUA] Engine Boot Sequence Complete.")
 
     -- 6. Hand off to C!
     C_Bridge.submit_buffers(bufA, bufB, bufCage, ptrA, ptrB, ptrCage)
