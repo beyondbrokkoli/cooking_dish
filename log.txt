@@ -1,0 +1,130 @@
+$ ./swarm_gpu.exe
+[BOOT] Starting Naked Bootloader...
+[LUA] love_load executing...
+[LUA] Initializing Vulkan Core...
+[LUA] Vulkan Instance Created!
+[LUA] Window Surface Linked!
+[LUA] Hardware GPU Selected!
+[LUA] Logical Device Created!
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x02a1f1eaff98
+[MEMORY] Initializing GPU Buffer Manager...
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02a1f1eaff98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02a1f1eaff98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x02a1f1eaff98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
+[DESCRIPTORS] Ping-Pong Sets successfully wired!
+[SWAPCHAIN] Building the display chain...
+[SWAPCHAIN] Created successfully with 3 images!
+[GRAPHICS] Building Depth Buffer and Shader Modules...
+[GRAPHICS] Depth Buffer and Shader Modules Ready.
+[GRAPHICS] Graphics Pipeline Successfully Compiled!
+[COMPUTE] Compiling Swarm Intelligence...
+[COMPUTE] Swarm Pipeline Ready!
+[C BRIDGE] Parsed Device String: '2894571700120'
+[C BRIDGE] Rebuilt VkDevice Pointer: 000002a1f1eaff98
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+
+=============================================
+ ­ƒôí VIBE ENGINE NETWORK BOOTSTRAP ­ƒôí
+=============================================
+Do you want to host? [Press ENTER]
+Is someone online? Type 'J' to Join 127.0.0.1
+Any other key = Single Player
+>
+[NETWORK] Hosting UDP on port 25000
+[NET] Hosting! Waiting for connections...
+=============================================
+
+[BOOT] Entering Main Loop...
+[BOOT] Entering Main Loop...
+[C DEBUG] 0. Extracting raw driver functions...
+[FATAL] Dynamic Rendering functions not found on device!
+
+-- then on the next iteration try i was instead getting a segfault like on linux
+$ ./swarm_gpu.exe
+[BOOT] Starting Naked Bootloader...
+[LUA] love_load executing...
+[LUA] Initializing Vulkan Core...
+[LUA] Vulkan Instance Created!
+[LUA] Window Surface Linked!
+[LUA] Hardware GPU Selected!
+[LUA] Logical Device Created!
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x01f9324067b8
+[MEMORY] Initializing GPU Buffer Manager...
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f9324067b8
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f9324067b8
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x01f9324067b8
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
+[DESCRIPTORS] Ping-Pong Sets successfully wired!
+[SWAPCHAIN] Building the display chain...
+[SWAPCHAIN] Created successfully with 3 images!
+[GRAPHICS] Building Depth Buffer and Shader Modules...
+[GRAPHICS] Depth Buffer and Shader Modules Ready.
+[GRAPHICS] Graphics Pipeline Successfully Compiled!
+[COMPUTE] Compiling Swarm Intelligence...
+[COMPUTE] Swarm Pipeline Ready!
+[C BRIDGE] Rebuilt VkInstance: 000001f92f45ccb0
+[C BRIDGE] Rebuilt VkDevice: 000001f9324067b8
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+[C BRIDGE] GPU Buffers safely locked via 64-bit strings.
+[LUA] Engine Boot Sequence Complete.
+
+=============================================
+ ­ƒôí VIBE ENGINE NETWORK BOOTSTRAP ­ƒôí
+=============================================
+Do you want to host? [Press ENTER]
+Is someone online? Type 'J' to Join 127.0.0.1
+Any other key = Single Player
+>
+[NETWORK] Hosting UDP on port 25000
+[NET] Hosting! Waiting for connections...
+=============================================
+
+[BOOT] Entering Main Loop... Segmentation fault ./swarm_gpu.exe --
+
+-- then after showing you the hidden modules you provided the nice solutions!
+$ ./swarm_gpu.exe
+[BOOT] Starting Naked Bootloader...
+[LUA] love_load executing...
+[LUA] Initializing Vulkan Core...
+[LUA] Vulkan Instance Created!
+[LUA] Window Surface Linked!
+[LUA] Hardware GPU Selected!
+[LUA] Logical Device Created!
+[DEBUG] Device Pointer in core:         cdata<struct VkDevice_T *>: 0x022f703e1f98
+[MEMORY] Initializing GPU Buffer Manager...
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x022f703e1f98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmA (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x022f703e1f98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: SwarmB (40000000 bytes)
+[DEBUG] Device Pointer in memory module:        cdata<struct VkDevice_T *>: 0x022f703e1f98
+[MEMORY] ReBAR Supported! Streaming directly to VRAM.
+[MEMORY] Allocated & Mapped Buffer: Cage (48 bytes)
+[DESCRIPTORS] Wiring Ping-Pong Compute Descriptors...
+[DESCRIPTORS] Ping-Pong Sets successfully wired!
+[SWAPCHAIN] Building the display chain...
+[SWAPCHAIN] Created successfully with 3 images!
+[GRAPHICS] Building Depth Buffer and Shader Modules...
+[GRAPHICS] Depth Buffer and Shader Modules Ready.
+[GRAPHICS] Graphics Pipeline Successfully Compiled!
+[C BRIDGE] Rebuilt VkDevice: 0000022f703e1f98
+[LUA FATAL ERROR]: main.lua:60: attempt to index field 'vk_compute' (a nil value)
+-- every iteration consisted of applying your suggested patches
