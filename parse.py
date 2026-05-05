@@ -231,6 +231,8 @@ def generate_lua_ffi_cdef(xml_path):
     return ffi_declarations
 
 if __name__ == "__main__":
+    # --- LUA MODULE HEADER ---
+    print("local ffi = require('ffi')")
     print("ffi.cdef[[")
 
     # Base types needed to keep LuaJIT happy
@@ -251,4 +253,6 @@ if __name__ == "__main__":
     for decl in declarations:
         print(decl)
 
+    # --- LUA MODULE FOOTER ---
     print("]]")
+    print("return true")

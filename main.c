@@ -5,6 +5,7 @@
 #include <luajit-2.1/lauxlib.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h> // <--- ADD THIS LINE
 
 // ========================================================
 // CROSS-PLATFORM SOCKETS
