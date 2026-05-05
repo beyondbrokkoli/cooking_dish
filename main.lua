@@ -156,7 +156,7 @@ end
 -- Or join one:
 -- C_Bridge.net_join("127.0.0.1", 25000)
 
-function love_update()
+function love_update(dt)
     -- Pipe data to logic
     camera_math.apply_movement(cam_state, dt)
     camera_math.build_matrix(cam_state, Engine.vk_swapchain.extent.width, Engine.vk_swapchain.extent.height)
